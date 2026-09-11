@@ -1,0 +1,2575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pendu Arena — Tournament Lifecycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<style>
+/* ==========================================================================
+   APEX / PENDU ARENA — Deep OLED Minimalism + Tactical HUD Glassmorphism
+   Tokens per Stitch "Apex Esports Dark Engine"
+   ========================================================================== */
+:root{
+  /* Stitch "Apex Esports Dark Engine" — values taken from the tailwind config
+     the screens actually render with (neutral slate-grey, not navy). */
+  --bg-base:#10131E;
+  --surface-lowest:#0B0E19;
+  --surface-low:#181B27;
+  --surface:#1C1F2B;
+  --surface-container:#1C1F2B;
+  --surface-high:#272936;
+  --surface-highest:#313441;
+  --surface-bright:#363945;
+
+  --border-line:#454655;
+  --border-elev:#454655;
+  --border-soft:rgba(255,255,255,.06);
+
+  --text-primary:#E0E1F2;
+  --text-secondary:#C5C5D8;
+  --text-muted:#8F8FA1;
+  --outline:#8F8FA1;
+
+  --accent-primary:#BDC2FF;      /* primary: icons/labels/accents */
+  --accent-btn:#7886FF;          /* primary-container: filled buttons */
+  --on-primary:#00149E;
+  --accent-hover:#9AA4FF;
+  --accent-soft:#BDC2FF;
+
+  --state-live:#31FFC7;
+  --state-live-bright:#31FFC7;
+  --gaming-cyan:#00F0FF;
+  --state-value:#F9BC46;
+  --state-value-dim:#F9BC46;
+  --state-urgent:#FFB4AB;
+  --error-container:#93000A;
+
+  --r-sm:.25rem;
+  --r:.5rem;
+  --r-md:.75rem;
+  --r-lg:1rem;
+  --r-xl:1.5rem;
+  --r-full:9999px;
+
+  --f-ui:'Outfit',system-ui,-apple-system,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --shell:440px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --snap:170ms;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--f-ui);
+  font-size:14px;line-height:20px;
+  background:#06080F;
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px 16px;min-height:100vh;
+  overscroll-behavior:none;
+}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input{font-family:inherit}
+::selection{background:var(--accent-primary);color:#fff}
+.material-symbols-outlined{
+  font-family:'Material Symbols Outlined'!important;font-weight:normal;font-style:normal;
+  line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;
+  white-space:nowrap;word-wrap:normal;direction:ltr;
+  -webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+  user-select:none;
+}
+.ms-fill{font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24}
+.scroll::-webkit-scrollbar{display:none}
+.scroll{scrollbar-width:none}
+
+/* type scale */
+.t-display{font-size:36px;line-height:44px;font-weight:800;letter-spacing:-.02em}
+.t-h-lg{font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em}
+.t-h-md{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.01em}
+.t-h-sm{font-size:18px;line-height:24px;font-weight:600}
+.t-body-lg{font-size:16px;line-height:24px}
+.t-body-sm{font-size:12px;line-height:16px;letter-spacing:.01em}
+.t-stat-xl{font-family:var(--f-mono);font-size:28px;line-height:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.t-stat-lg{font-family:var(--f-mono);font-size:20px;line-height:24px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.t-stat-md{font-family:var(--f-mono);font-size:14px;line-height:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.t-label-md{font-family:var(--f-mono);font-size:12px;line-height:16px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.t-label-sm{font-family:var(--f-mono);font-size:10px;line-height:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+
+/* ==========================================================================
+   DEVICE SHELL
+   ========================================================================== */
+.device{
+  width:100%;max-width:var(--shell);
+  height:min(940px,calc(100vh - 40px));
+  background:var(--bg-base);
+  border:1px solid var(--border-line);
+  border-radius:32px;
+  position:relative;display:flex;flex-direction:column;
+  overflow:hidden;
+  box-shadow:0 40px 90px -20px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.03) inset;
+}
+
+/* ---------- top app bar ---------- */
+.appbar{
+  flex:0 0 auto;height:60px;padding:0 16px;
+  display:flex;align-items:center;gap:10px;
+  background:rgba(11,14,25,.85);backdrop-filter:blur(20px);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);
+  position:relative;z-index:30;
+}
+.logo{
+  width:38px;height:30px;flex:0 0 auto;display:grid;place-items:center;
+  filter:drop-shadow(0 0 10px rgba(91,108,255,.7));
+}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
+/* Stitch gameplay still sits under the video: covers the pre-play frame and
+   stays visible if the clip cannot autoplay. */
+.hero-still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.hero-media video{position:absolute;inset:0}
+.crest-img img,.team-crest img{filter:saturate(1.15) contrast(1.05)}
+.brand-n{font-size:16px;font-weight:700;letter-spacing:-.01em;line-height:1;text-transform:uppercase}
+.brand-s{font-family:var(--f-mono);font-size:9px;letter-spacing:.14em;color:var(--text-secondary);text-transform:uppercase;margin-top:3px}
+.gold-chip{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  padding:5px 11px;border-radius:var(--r-full);
+  background:var(--surface-high);
+  box-shadow:0 0 12px rgba(249,188,70,.15);
+  transition:box-shadow .3s var(--ease);
+}
+.gold-chip.flash{box-shadow:0 0 0 2px rgba(255,194,75,.5),0 0 24px rgba(255,194,75,.6)}
+.gold-chip .material-symbols-outlined{font-size:16px;color:var(--state-value);filter:drop-shadow(0 0 6px rgba(249,188,70,.6))}
+.gold-v{font-family:var(--f-mono);font-size:14px;font-weight:700;color:var(--state-value);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.bell{
+  position:relative;width:38px;height:38px;flex:0 0 auto;border-radius:var(--r-md);
+  display:grid;place-items:center;background:rgba(39,41,54,.5);color:var(--text-secondary);
+  transition:color var(--snap) var(--ease);
+}
+.bell:hover{color:var(--text-primary)}
+.bell .dot-n{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--state-live-bright);box-shadow:0 0 8px rgba(49,255,199,.8)}
+.me{
+  position:relative;width:36px;height:36px;flex:0 0 auto;border-radius:50%;padding:2px;
+  background:var(--surface-high);box-shadow:0 0 12px rgba(189,194,255,.35);
+}
+.me img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.me .on{position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:var(--state-live-bright);border:2px solid var(--bg-base);box-shadow:0 0 6px rgba(49,255,199,.9)}
+
+/* ---------- phase stepper ---------- */
+.phasebar{
+  flex:0 0 auto;background:rgba(11,14,25,.7);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border-soft);position:relative;z-index:25;
+}
+.phases{display:flex;gap:6px;overflow-x:auto;padding:9px 12px;scroll-behavior:smooth}
+.phase{
+  flex:0 0 auto;display:flex;align-items:center;gap:7px;
+  padding:6px 12px 6px 7px;border-radius:var(--r-full);
+  background:var(--surface-high);border:1px solid transparent;
+  transition:all var(--snap) var(--ease);white-space:nowrap;
+}
+.phase:hover{border-color:var(--border-elev)}
+.phase-i{
+  width:18px;height:18px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+  font-family:var(--f-mono);font-size:9px;font-weight:700;
+  background:var(--surface-lowest);color:var(--text-muted);
+  transition:all var(--snap) var(--ease);
+}
+.phase-n{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.phase.done .phase-i{background:rgba(46,255,199,.15);color:var(--state-live)}
+.phase.active{background:rgba(91,108,255,.16);border-color:var(--accent-primary);box-shadow:0 0 16px rgba(91,108,255,.35)}
+.phase.active .phase-i{background:var(--accent-primary);color:#fff}
+.phase.active .phase-n{color:var(--text-primary)}
+.rail{height:2px;background:var(--surface-high);overflow:hidden}
+.rail-f{height:100%;width:16.6%;background:linear-gradient(90deg,var(--accent-primary),var(--state-live));box-shadow:0 0 10px rgba(91,108,255,.8);transition:width .5s var(--ease-out)}
+
+/* ---------- sub header ---------- */
+.subhead{display:flex;align-items:center;gap:10px;padding:12px 0 10px}
+.back{
+  width:36px;height:36px;flex:0 0 auto;border-radius:var(--r);
+  display:grid;place-items:center;background:var(--surface-high);
+  color:var(--text-primary);transition:color var(--snap) var(--ease);
+}
+.back:hover{color:var(--accent-soft)}
+.subhead h1{margin:0;font-size:18px;line-height:22px;font-weight:700;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phase-tag{display:flex;align-items:center;gap:6px;margin-top:3px}
+.phase-tag span:last-child{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--state-live)}
+
+/* ==========================================================================
+   PENDU LIVE WAVEFORM  (ported from lib/presentation/widgets/common/live_waveform.dart)
+   3 bars · scaleY .35→1 · 400/520/360ms · easeInOut · reverse
+   ========================================================================== */
+.wave{display:inline-flex;align-items:flex-end;justify-content:space-evenly;height:12px;width:16px;flex:0 0 auto}
+.wave i{display:block;width:2.4px;border-radius:1.2px;background:currentColor;transform-origin:bottom center;animation:waveBar var(--d) ease-in-out infinite alternate}
+.wave i:nth-child(1){height:62.5%;--d:400ms}
+.wave i:nth-child(2){height:87.5%;--d:520ms}
+.wave i:nth-child(3){height:50%;--d:360ms}
+@keyframes waveBar{from{transform:scaleY(.35)}to{transform:scaleY(1)}}
+.wave-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 8px;border-radius:6px;
+  background:rgba(0,0,0,.45);color:var(--gaming-cyan);
+}
+
+/* ==========================================================================
+   VIEWPORT + SCREENS
+   ========================================================================== */
+.viewport{flex:1 1 auto;position:relative;overflow:hidden}
+.screen{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  /* sticky CTA lives inside the scroll flow; only the nav pill needs clearing */
+  padding:0 16px 96px;
+  opacity:0;visibility:hidden;transform:translateX(16px);
+  transition:opacity var(--snap) var(--ease),transform var(--snap) var(--ease),visibility var(--snap);
+}
+.screen.active{opacity:1;visibility:visible;transform:none}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--border-line);
+  border-radius:var(--r-md);padding:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.card-elev{background:var(--surface-container);border-color:var(--border-elev);box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.card + .card{margin-top:12px}
+.card-t{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card-t h2{margin:0;font-size:18px;line-height:22px;font-weight:700;letter-spacing:-.01em}
+.card-t .material-symbols-outlined{font-size:20px;color:var(--accent-soft)}
+.card-t .right{margin-left:auto}
+
+.sect{display:flex;align-items:center;gap:8px;margin:18px 2px 10px}
+.sect h3{margin:0;font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-secondary)}
+.sect .right{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--text-muted)}
+
+/* ---------- chips ---------- */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;
+  border-radius:var(--r-full);background:var(--surface-high);
+  font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-secondary);
+}
+.chip .material-symbols-outlined{font-size:13px}
+.chip-live{background:rgba(46,255,199,.1);color:var(--state-live);box-shadow:0 0 12px rgba(46,255,199,.2)}
+.chip-gold{background:rgba(255,194,75,.1);color:var(--state-value);border:1px solid rgba(255,194,75,.35)}
+.chip-blue{background:rgba(91,108,255,.14);color:var(--accent-soft)}
+.chip-red{background:rgba(255,59,105,.12);color:var(--state-urgent)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;box-shadow:0 0 8px currentColor}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  height:48px;padding:0 16px;border-radius:var(--r);
+  font-family:var(--f-ui);font-size:16px;font-weight:700;letter-spacing:-.01em;
+  background:var(--surface);border:1px solid var(--border-line);color:var(--text-primary);
+  transition:transform var(--snap) var(--ease),box-shadow var(--snap) var(--ease),background var(--snap),border-color var(--snap),opacity var(--snap);
+}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn .material-symbols-outlined{font-size:20px}
+.btn-primary{background:var(--accent-primary);border-color:var(--accent-primary);color:#fff;box-shadow:0 0 16px rgba(91,108,255,.35)}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover);box-shadow:0 0 24px rgba(91,108,255,.55)}
+.btn-soft{background:var(--accent-soft);border-color:var(--accent-soft);color:#00149E;box-shadow:0 0 16px rgba(189,194,255,.3)}
+.btn-live{background:var(--state-live-bright);border-color:var(--state-live-bright);color:#002117;box-shadow:0 0 18px rgba(46,255,199,.45)}
+.btn-gold{background:var(--state-value);border-color:var(--state-value);color:#271900;box-shadow:0 0 18px rgba(255,194,75,.45)}
+.btn-ghost{background:transparent;border-color:var(--border-line);color:var(--text-primary)}
+.btn-ghost:hover:not(:disabled){border-color:var(--accent-primary);color:var(--accent-soft)}
+.btn-spec{background:rgba(46,255,199,.12);border:1px solid var(--state-live);color:var(--state-live)}
+
+/* ==========================================================================
+   PHASE 1 — LOBBY
+   ========================================================================== */
+/* Stitch hero showcase: thumbnail on top, details below, one card */
+.showcase{
+  border-radius:var(--r-md);overflow:hidden;background:var(--surface-container);
+  box-shadow:0 12px 32px rgba(0,0,0,.6);
+}
+.showcase-thumb{position:relative;width:100%;height:176px;overflow:hidden}
+.showcase-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;transform:scale(1.05);display:block}
+.showcase-scrim{position:absolute;inset:0;background:linear-gradient(to top,var(--surface-container),rgba(28,31,43,.6) 45%,transparent)}
+.showcase-top{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.showcase-count{
+  position:absolute;bottom:12px;left:12px;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 12px;border-radius:var(--r-full);
+  background:rgba(11,14,25,.9);backdrop-filter:blur(10px);
+  box-shadow:0 4px 14px rgba(0,0,0,.5);
+  font-family:var(--f-mono);font-size:13px;font-weight:600;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--text-primary);
+}
+.showcase-count b{color:var(--accent-btn);font-weight:700}
+.showcase-count .material-symbols-outlined{font-size:15px}
+.showcase-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.ttl-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
+.ttl{margin:2px 0 0;font-size:22px;line-height:27px;font-weight:700;letter-spacing:-.01em}
+.pool{
+  display:flex;align-items:center;gap:11px;padding:12px;
+  border-radius:var(--r);background:var(--surface-low);
+}
+.pool-ic{
+  width:36px;height:36px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  background:rgba(249,188,70,.1);color:var(--state-value);
+  box-shadow:0 0 12px rgba(249,188,70,.25);
+}
+.pool-ic .material-symbols-outlined{font-size:20px}
+.pool-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-secondary)}
+.pool-v{font-family:var(--f-mono);font-size:20px;font-weight:600;color:var(--state-value);letter-spacing:-.01em;margin-top:3px}
+
+/* slots + progress + meta grid (Stitch registration progress card) */
+.slots-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.slots-top .material-symbols-outlined{font-size:17px;color:var(--text-secondary)}
+.slots-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-primary)}
+.slots-v{margin-left:auto;font-family:var(--f-mono);font-size:13px;font-weight:500;color:var(--state-live);letter-spacing:-.01em}
+.track{height:10px;border-radius:var(--r-full);background:var(--surface-highest);overflow:hidden}
+.track-f{
+  height:100%;border-radius:var(--r-full);
+  background:linear-gradient(90deg,var(--accent-btn),var(--accent-primary) 45%,var(--state-live));
+  box-shadow:0 0 12px rgba(49,255,199,.5);transition:width .7s var(--ease-out);
+}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.tri-c{background:var(--surface-low);border-radius:var(--r);padding:9px 6px;text-align:center}
+.tri-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-secondary)}
+.tri-v{font-family:var(--f-mono);font-size:13px;font-weight:600;margin-top:4px;letter-spacing:-.01em}
+.tri-v.gold{color:var(--state-value)}
+
+/* squad crest strip */
+.crests{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.crest{flex:0 0 auto;width:74px;scroll-snap-align:start;text-align:center}
+.crest-img{
+  position:relative;width:74px;height:74px;border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--border-line);background:var(--surface-lowest);
+}
+.crest-img img{width:100%;height:100%;object-fit:cover;display:block}
+.crest-seed{
+  position:absolute;right:3px;bottom:3px;
+  font-family:var(--f-mono);font-size:9px;font-weight:700;color:var(--state-value);
+  background:rgba(11,14,25,.85);padding:1px 4px;border-radius:3px;
+}
+.crest-n{font-size:11px;font-weight:600;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* organizer + rules */
+.org{display:flex;align-items:center;gap:11px}
+.org-ic{
+  width:40px;height:40px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface-high);color:var(--accent-soft);
+}
+.org-n{display:flex;align-items:center;gap:5px;font-size:16px;font-weight:700;letter-spacing:-.01em}
+.org-n .material-symbols-outlined{font-size:16px;color:var(--accent-soft)}
+.org-s{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--text-secondary);margin-top:2px;text-transform:uppercase}
+.rate{margin-left:auto;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--r-full);background:var(--surface-high);font-family:var(--f-mono);font-size:12px;font-weight:600}
+.rate .material-symbols-outlined{font-size:14px;color:var(--state-value)}
+
+.rule{display:flex;gap:11px;padding:11px;border-radius:var(--r);background:var(--surface-lowest);margin-top:9px}
+.rule-i{
+  width:22px;height:22px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  background:rgba(46,255,199,.12);color:var(--state-live);
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+}
+.rule-t{font-size:14px;font-weight:600;letter-spacing:-.005em}
+.rule-d{font-size:12px;line-height:17px;color:var(--text-secondary);margin-top:3px}
+.rulebook{
+  display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:42px;
+  margin-top:10px;border-radius:var(--r);background:var(--surface-lowest);
+  border:1px solid var(--border-line);color:var(--accent-soft);font-size:14px;font-weight:600;
+  transition:border-color var(--snap) var(--ease);
+}
+.rulebook:hover{border-color:var(--accent-primary)}
+
+/* ==========================================================================
+   PHASE 2 — SQUAD REGISTRATION
+   ========================================================================== */
+.entry-card{
+  position:relative;border-radius:var(--r-md);overflow:hidden;padding:14px;
+  background:linear-gradient(120deg,var(--surface-container),var(--surface-low));
+  border:1px solid var(--border-elev);
+}
+.entry-pool{position:absolute;top:12px;right:14px;text-align:right}
+.entry-pool .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.entry-pool .v{font-family:var(--f-mono);font-size:20px;font-weight:700;color:var(--state-value);margin-top:3px}
+
+.player{
+  display:flex;align-items:center;gap:11px;padding:10px;
+  border-radius:var(--r);background:var(--surface-lowest);
+  transition:background var(--snap) var(--ease);
+}
+.player + .player{margin-top:8px}
+.p-face{
+  position:relative;width:50px;height:50px;flex:0 0 auto;border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--border-line);
+}
+.p-face img{width:100%;height:100%;object-fit:cover;display:block}
+.p-face .capt{
+  position:absolute;left:2px;bottom:2px;width:14px;height:14px;border-radius:50%;
+  background:var(--accent-primary);display:grid;place-items:center;
+}
+.p-face .capt .material-symbols-outlined{font-size:10px;color:#fff}
+.p-n{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:700;letter-spacing:-.01em}
+.p-badge{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:rgba(91,108,255,.18);color:var(--accent-soft);text-transform:uppercase}
+.p-st{font-family:var(--f-mono);font-size:11px;margin-top:4px;color:var(--text-secondary)}
+.p-st b{color:var(--text-primary);font-weight:600}
+.p-st .win{color:var(--state-value)}
+.p-right{margin-left:auto;text-align:right;flex:0 0 auto}
+.p-ready{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--state-live)}
+.p-ready.off{color:var(--text-muted)}
+.p-ping{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--text-muted);margin-top:5px;text-transform:uppercase}
+
+.verified-strip{
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;
+  padding:11px;border-radius:var(--r);background:rgba(46,255,199,.07);
+  font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--state-live);
+}
+.verified-strip .material-symbols-outlined{font-size:16px}
+
+.pay-row{display:flex;align-items:center;padding:10px 0;font-size:15px}
+.pay-row + .pay-row{border-top:1px solid var(--border-soft)}
+.pay-row .v{margin-left:auto;font-family:var(--f-mono);font-weight:700;font-size:15px}
+.pay-row .v.gold{color:var(--state-value)}
+.pay-row .v.mint{color:var(--state-live)}
+.pay-row.tot{border-top:1px solid var(--border-line);margin-top:4px;padding-top:12px}
+
+.agree{display:flex;gap:11px;padding:12px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border-line);margin-top:12px;cursor:pointer}
+.agree-box{
+  width:22px;height:22px;flex:0 0 auto;border-radius:5px;
+  border:2px solid var(--outline);display:grid;place-items:center;
+  transition:all var(--snap) var(--ease);
+}
+.agree.on .agree-box{background:var(--accent-soft);border-color:var(--accent-soft)}
+.agree-box .material-symbols-outlined{font-size:16px;color:#00149E;opacity:0;transition:opacity var(--snap)}
+.agree.on .agree-box .material-symbols-outlined{opacity:1}
+.agree-t{font-size:14px;font-weight:600}
+.agree-d{font-size:12px;line-height:17px;color:var(--text-secondary);margin-top:3px}
+
+/* ==========================================================================
+   PHASE 3 — CHECK-IN
+   ========================================================================== */
+.urgent{
+  display:flex;gap:12px;padding:14px;border-radius:var(--r-md);
+  background:linear-gradient(120deg,rgba(147,0,10,.45),rgba(60,10,24,.35));
+  border:1px solid rgba(255,59,105,.35);
+}
+.urgent.done{background:linear-gradient(120deg,rgba(0,90,70,.35),rgba(10,45,38,.3));border-color:rgba(46,255,199,.35)}
+.urgent-ic{
+  width:42px;height:42px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:rgba(255,59,105,.15);color:var(--state-urgent);
+}
+.urgent.done .urgent-ic{background:rgba(46,255,199,.13);color:var(--state-live)}
+.urgent-ic .material-symbols-outlined{font-size:23px}
+.urgent-k{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--state-urgent)}
+.urgent.done .urgent-k{color:var(--state-live)}
+.urgent-d{font-size:13px;line-height:18px;color:var(--text-secondary);margin-top:6px}
+.urgent-t{margin-left:auto;font-family:var(--f-mono);font-size:26px;font-weight:700;color:var(--state-urgent);letter-spacing:-.02em;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.urgent.done .urgent-t{color:var(--state-live)}
+
+.cred-f{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;
+  border-radius:var(--r);background:var(--surface-lowest);
+}
+.cred-f + .cred-f{margin-top:9px}
+.cred-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.cred-v{font-family:var(--f-mono);font-size:20px;font-weight:700;letter-spacing:.02em;margin-top:4px}
+.cred-v.blue{color:var(--text-primary)}
+.cred-v.gold{color:var(--state-value)}
+.copy{
+  margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:6px;
+  height:36px;padding:0 12px;border-radius:var(--r);background:var(--surface-high);
+  font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-secondary);
+  transition:all var(--snap) var(--ease);
+}
+.copy .material-symbols-outlined{font-size:15px}
+.copy:hover{color:var(--text-primary)}
+.copy.ok{background:rgba(46,255,199,.14);color:var(--state-live)}
+.cred-lock{
+  position:absolute;inset:0;z-index:5;border-radius:var(--r-md);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  background:rgba(10,13,24,.9);backdrop-filter:blur(8px);
+  transition:opacity .3s var(--ease),visibility .3s;
+}
+.cred-wrap.open .cred-lock{opacity:0;visibility:hidden}
+.cred-lock p{margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--text-secondary);text-transform:uppercase}
+
+.note{display:flex;gap:10px;padding:11px;border-radius:var(--r);background:var(--surface-lowest);margin-top:10px}
+.note .material-symbols-outlined{font-size:17px;color:var(--state-value);flex:0 0 auto}
+.note p{margin:0;font-size:12px;line-height:17px;color:var(--text-secondary)}
+
+.launch{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;
+  margin-top:10px;border-radius:var(--r);background:var(--surface-high);
+  font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-primary);
+  transition:background var(--snap) var(--ease);
+}
+.launch:hover{background:var(--surface-highest)}
+.launch .material-symbols-outlined{font-size:17px}
+
+.team{
+  position:relative;display:flex;align-items:center;gap:11px;padding:10px;
+  border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border-line);
+  transition:border-color .3s var(--ease);
+}
+.team + .team{margin-top:9px}
+.team.you{border-color:var(--state-live)}
+.team.you::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--state-live)}
+.team-crest{position:relative;width:46px;height:46px;flex:0 0 auto;border-radius:var(--r);overflow:hidden;border:1px solid var(--border-line)}
+.team-crest img{width:100%;height:100%;object-fit:cover;display:block}
+.team-seed{
+  position:absolute;left:-4px;top:-4px;font-family:var(--f-mono);font-size:9px;font-weight:700;
+  padding:1px 5px;border-radius:4px;background:var(--surface-highest);color:var(--text-secondary);
+}
+.team.you .team-seed{background:rgba(46,255,199,.18);color:var(--state-live)}
+.team-n{font-size:16px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:7px}
+.team-r{font-family:var(--f-mono);font-size:11px;margin-top:4px;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+.team-r .material-symbols-outlined{font-size:13px}
+.team-st{margin-left:auto;flex:0 0 auto}
+
+/* ==========================================================================
+   PHASE 4 — LIVE STREAM
+   ========================================================================== */
+.stream{
+  position:relative;width:100%;border-radius:var(--r-md);overflow:hidden;
+  background:#000;box-shadow:0 12px 36px rgba(0,0,0,.7);
+}
+.stream-vp{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+.stream-vp video{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block;background:#000;
+}
+/* tactical shader overlays */
+.stream-vp::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to bottom,rgba(11,14,25,.75) 0%,transparent 22%,transparent 62%,rgba(11,14,25,.85) 100%);
+}
+.scanlines{
+  position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.5;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px);
+}
+
+.hud{position:absolute;inset:0;z-index:3;pointer-events:none;padding:10px;display:flex;flex-direction:column}
+.hud-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hud-chip{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;
+  border-radius:var(--r-full);background:rgba(11,14,25,.75);backdrop-filter:blur(10px);
+  font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-primary);
+}
+.hud-chip .material-symbols-outlined{font-size:14px}
+.hud-live{color:var(--gaming-cyan);box-shadow:0 0 12px rgba(0,240,255,.3)}
+.hud-score{margin-left:auto;background:rgba(11,14,25,.8);color:var(--text-primary)}
+.hud-score b{color:var(--state-live);font-weight:700}
+.hud-score i{font-style:normal;color:var(--state-value);font-weight:700}
+
+.zone-alert{
+  align-self:center;margin-top:auto;margin-bottom:auto;
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;
+  border-radius:var(--r-full);background:rgba(11,14,25,.82);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,194,75,.4);
+  font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--state-value);
+  box-shadow:0 0 20px rgba(255,194,75,.25);
+  animation:zonePulse 2.4s var(--ease) infinite;
+}
+@keyframes zonePulse{0%,100%{opacity:.92}50%{opacity:1;box-shadow:0 0 28px rgba(255,194,75,.45)}}
+
+/* stream control bar */
+.stream-bar{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;
+  background:var(--surface-lowest);border-top:1px solid var(--border-soft);
+}
+.sb-btn{
+  width:34px;height:34px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:var(--surface-high);color:var(--text-primary);
+  transition:color var(--snap) var(--ease),background var(--snap) var(--ease);
+}
+.sb-btn:hover{background:var(--surface-highest);color:var(--accent-soft)}
+.sb-btn .material-symbols-outlined{font-size:18px}
+.sb-sync{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--state-live)}
+.sb-q{
+  margin-left:auto;font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:5px 9px;border-radius:var(--r-sm);background:rgba(91,108,255,.16);color:var(--accent-soft);
+}
+
+/* ---------- floating fade comments over the stream ---------- */
+.floatlayer{position:absolute;left:0;right:0;bottom:8%;height:60%;z-index:4;pointer-events:none;overflow:hidden}
+.floatmsg{
+  position:absolute;left:10px;max-width:76%;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 10px;border-radius:var(--r-full);
+  background:rgba(11,14,25,.6);backdrop-filter:blur(8px);
+  font-size:12px;line-height:16px;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  animation:floatUp var(--dur,7s) linear forwards;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);
+}
+.floatmsg b{font-weight:700;flex:0 0 auto}
+.floatmsg.gift{background:rgba(255,194,75,.18);border:1px solid rgba(255,194,75,.45);color:var(--state-value);font-weight:600}
+@keyframes floatUp{
+  0%{transform:translateY(100%);opacity:0}
+  10%{opacity:1}
+  75%{opacity:1}
+  100%{transform:translateY(-130%);opacity:0}
+}
+
+/* gift splash */
+.splash{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.gift-fly{
+  position:absolute;left:50%;top:50%;font-size:58px;opacity:0;
+  transform:translate(-50%,-50%);
+  animation:giftPop 1.9s var(--ease-out) forwards;
+  filter:drop-shadow(0 0 26px rgba(255,194,75,.9));
+}
+@keyframes giftPop{
+  0%{opacity:0;transform:translate(-50%,20%) scale(.3) rotate(-20deg)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(5deg)}
+  32%{transform:translate(-50%,-50%) scale(1)}
+  72%{opacity:1;transform:translate(-50%,-56%) scale(1.03)}
+  100%{opacity:0;transform:translate(-50%,-160%) scale(.6)}
+}
+.spark{position:absolute;width:7px;height:7px;border-radius:50%;animation:sparkFly 1.2s var(--ease-out) forwards}
+@keyframes sparkFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.2)}}
+.gift-ring{
+  position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;
+  border-radius:50%;border:2px solid var(--state-value);animation:ringOut 1.1s var(--ease-out) forwards;
+}
+@keyframes ringOut{to{transform:scale(4.8);opacity:0;border-width:.5px}}
+
+/* ---------- fullscreen theatre ---------- */
+.theatre{
+  position:fixed;inset:0;z-index:9999;background:#000;
+  display:none;flex-direction:column;
+}
+.theatre.on{display:flex}
+.theatre-vp{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+.theatre-vp video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.theatre .hud{padding:16px}
+.theatre .floatlayer{height:55%}
+.theatre-bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:var(--surface-lowest);
+}
+
+/* ---------- chat ---------- */
+.chat{
+  height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;
+  padding-right:2px;scroll-behavior:smooth;
+}
+.cmsg{font-size:14px;line-height:19px;animation:msgIn .22s var(--ease-out) backwards}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cmsg .u{font-weight:700}
+.cmsg .tx{color:var(--text-secondary)}
+.cmsg.mod{display:flex;gap:8px;align-items:flex-start}
+.mod-tag{
+  flex:0 0 auto;font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;
+  padding:2px 6px;border-radius:4px;background:var(--surface-highest);color:var(--text-secondary);
+  text-transform:uppercase;margin-top:2px;
+}
+.cmsg.giftrow{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:var(--r);background:var(--surface-lowest);
+}
+.gr-ic{
+  width:36px;height:36px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface-highest);font-size:18px;
+}
+.gr-t{font-size:13px;line-height:18px}
+.gr-t b{color:var(--state-value);font-weight:700}
+.gr-s{font-family:var(--f-mono);font-size:11px;color:var(--state-live);margin-top:2px}
+.gr-c{
+  margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:4px;
+  padding:4px 9px;border-radius:var(--r-full);background:rgba(255,194,75,.12);
+  font-family:var(--f-mono);font-size:11px;font-weight:700;color:var(--state-value);
+}
+.gr-c .material-symbols-outlined{font-size:13px}
+
+.chatbar{display:flex;gap:8px;margin-top:10px}
+.chatbar input{
+  flex:1;min-width:0;height:44px;padding:0 13px;border-radius:var(--r);
+  background:var(--surface);border:1px solid var(--border-line);color:var(--text-primary);
+  font-size:14px;outline:none;transition:border-color var(--snap),box-shadow var(--snap);
+}
+.chatbar input::placeholder{color:var(--text-muted)}
+.chatbar input:focus{border-color:var(--accent-primary);box-shadow:0 0 0 2px rgba(91,108,255,.25)}
+.giftbtn{
+  width:48px;height:44px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.45);color:var(--state-value);
+  transition:transform var(--snap) var(--ease);
+}
+.giftbtn:active{transform:scale(.95)}
+.giftbtn .material-symbols-outlined{font-size:22px}
+
+/* gift tier tiles */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.tier{
+  position:relative;padding:14px 8px 12px;border-radius:var(--r-md);
+  background:var(--surface-lowest);border:1px solid var(--border-line);text-align:center;
+  transition:all var(--snap) var(--ease);
+}
+.tier:hover:not(:disabled){border-color:var(--border-elev)}
+.tier.sel{border-color:var(--state-value);background:rgba(255,194,75,.06);box-shadow:0 0 16px rgba(255,194,75,.2)}
+.tier:disabled{opacity:.4;cursor:not-allowed}
+.tier-ic{
+  width:48px;height:48px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+  background:var(--surface-highest);font-size:24px;
+}
+.tier-n{font-size:14px;font-weight:700;margin-top:9px;letter-spacing:-.01em}
+.tier-c{display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--state-value)}
+.tier-c .material-symbols-outlined{font-size:14px}
+.tier-s{font-family:var(--f-mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:7px}
+.tier.sel .tier-s{color:var(--state-live)}
+.tier-pop{
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.08em;
+  padding:2px 8px;border-radius:var(--r-full);background:var(--state-value);color:#271900;
+  text-transform:uppercase;white-space:nowrap;
+}
+.recv{display:flex;gap:9px;margin-bottom:12px}
+.recv-o{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:42px;
+  border-radius:var(--r);background:var(--surface-lowest);border:1px solid var(--border-line);
+  font-size:14px;font-weight:600;transition:all var(--snap) var(--ease);
+}
+.recv-o.on{border-color:var(--state-live);color:var(--state-live);background:rgba(46,255,199,.07)}
+.recv-o .dot{box-shadow:none}
+
+/* ==========================================================================
+   PHASE 5 — BRACKET
+   ========================================================================== */
+.stage-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:12px}
+.stage-tab{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;
+  border-radius:var(--r-full);background:var(--surface);border:1px solid var(--border-line);
+  font-size:13px;font-weight:600;color:var(--text-secondary);
+  transition:all var(--snap) var(--ease);
+}
+.stage-tab .material-symbols-outlined{font-size:15px}
+.stage-tab.on{background:rgba(46,255,199,.1);border-color:var(--state-live);color:var(--state-live)}
+
+.bmatch{border-radius:var(--r-md);background:var(--surface-lowest);border:1px solid var(--border-line);overflow:hidden}
+.bhead{display:flex;align-items:center;padding:0 2px 7px}
+.bhead .k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.bhead .s{margin-left:auto;font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--state-live)}
+.brow{display:flex;align-items:center;gap:10px;padding:12px;transition:background var(--snap)}
+.brow + .brow{border-top:1px solid var(--border-soft)}
+.brow .material-symbols-outlined{font-size:18px;color:var(--text-muted);flex:0 0 auto}
+.brow-n{font-size:16px;font-weight:700;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow-s{margin-left:auto;font-family:var(--f-mono);font-size:20px;font-weight:700;color:var(--text-muted);flex:0 0 auto}
+.brow.win{background:rgba(46,255,199,.07)}
+.brow.win .material-symbols-outlined{color:var(--state-live)}
+.brow.win .brow-s{color:var(--state-live)}
+.brow.out{opacity:.45}
+.win-tag{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:var(--state-live);color:#002117;text-transform:uppercase}
+.bconn{width:1px;height:18px;background:var(--border-line);margin:0 auto}
+
+.blive{border:1px solid var(--accent-primary);border-radius:var(--r-md);padding:12px;background:rgba(91,108,255,.06);box-shadow:0 0 16px rgba(91,108,255,.2)}
+.blive-h{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.blive-h .k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--state-live)}
+.blive-h .r{margin-left:auto;font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.blive-b{display:flex;align-items:center;gap:10px}
+.blive-t{flex:1;min-width:0}
+.blive-t .n{font-size:15px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:5px}
+.blive-t .n .material-symbols-outlined{font-size:15px;color:var(--state-live)}
+.blive-t .s{font-family:var(--f-mono);font-size:10px;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.blive-t.right{text-align:right}
+.blive-t.right .n{justify-content:flex-end}
+.blive-sc{
+  flex:0 0 auto;text-align:center;padding:7px 13px;border-radius:var(--r);
+  background:var(--surface-lowest);border:1px solid var(--border-line);
+}
+.blive-sc .v{font-family:var(--f-mono);font-size:20px;font-weight:700;letter-spacing:-.01em}
+.blive-sc .l{font-family:var(--f-mono);font-size:8px;font-weight:600;letter-spacing:.1em;color:var(--text-muted);margin-top:2px}
+.blive-f{display:flex;align-items:center;gap:9px;margin-top:11px}
+.blive-f .sp{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11px;color:var(--text-secondary)}
+.blive-f .sp .material-symbols-outlined{font-size:14px}
+.watch{
+  margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;
+  border-radius:var(--r-full);background:rgba(46,255,199,.12);border:1px solid var(--state-live);
+  font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--state-live);
+}
+
+/* result submission */
+.place{
+  display:flex;align-items:center;gap:11px;padding:12px;border-radius:var(--r);
+  background:rgba(255,194,75,.07);border:1px solid rgba(255,194,75,.4);
+}
+.place .material-symbols-outlined{font-size:22px;color:var(--state-value);flex:0 0 auto}
+.place-t{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.place-d{font-family:var(--f-mono);font-size:11px;color:var(--state-value);margin-top:3px}
+.place .ok{margin-left:auto;color:var(--state-live);font-size:20px}
+
+.stepper{display:flex;align-items:center;gap:12px;margin-top:12px}
+.step-b{
+  width:44px;height:44px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:var(--surface-lowest);border:1px solid var(--border-line);color:var(--text-primary);
+  transition:all var(--snap) var(--ease);
+}
+.step-b:hover{border-color:var(--accent-primary);color:var(--accent-soft)}
+.step-b .material-symbols-outlined{font-size:20px}
+.step-v{flex:1;text-align:center}
+.step-v .n{font-family:var(--f-mono);font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.step-v .n span{font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-muted);margin-left:5px}
+.step-v .l{font-family:var(--f-mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--state-live);margin-top:5px}
+
+.shot{
+  border:1.5px dashed var(--border-line);border-radius:var(--r-md);padding:20px 14px;
+  text-align:center;background:var(--surface-lowest);cursor:pointer;
+  transition:all var(--snap) var(--ease);
+}
+.shot:hover{border-color:var(--accent-primary)}
+.shot.has{border-style:solid;border-color:rgba(46,255,199,.4);padding:10px;text-align:left}
+.shot-ic{font-size:26px;color:var(--text-muted)}
+.shot-t{font-size:14px;font-weight:600;margin-top:8px}
+.shot-d{font-family:var(--f-mono);font-size:11px;color:var(--text-muted);margin-top:5px}
+.shot-prev{position:relative;border-radius:var(--r);overflow:hidden;height:130px;background:#000}
+.shot-prev video{width:100%;height:100%;object-fit:cover;display:block}
+.shot-ver{
+  position:absolute;left:8px;bottom:8px;display:inline-flex;align-items:center;gap:5px;
+  padding:4px 9px;border-radius:var(--r-full);background:rgba(11,14,25,.85);
+  font-family:var(--f-mono);font-size:10px;font-weight:600;color:var(--state-live);
+}
+.shot-ver .material-symbols-outlined{font-size:12px}
+.shot-meta{display:flex;align-items:center;gap:8px;margin-top:9px}
+.shot-meta .material-symbols-outlined{font-size:16px;color:var(--text-muted)}
+.shot-nm{font-family:var(--f-mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shot-id{margin-left:auto;font-family:var(--f-mono);font-size:10px;color:var(--text-muted);flex:0 0 auto}
+
+/* ==========================================================================
+   PHASE 6 — VICTORY
+   ========================================================================== */
+.champ{
+  position:relative;overflow:hidden;border-radius:var(--r-md);
+  padding:22px 16px 18px;text-align:center;
+  background:radial-gradient(260px 160px at 50% 0%,rgba(255,194,75,.18),transparent 70%),var(--surface);
+  border:1px solid rgba(255,194,75,.28);
+}
+.champ-sparkles{position:absolute;inset:0;pointer-events:none}
+.champ-sparkles i{position:absolute;color:var(--state-value);opacity:.5;font-size:12px;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:.8;transform:scale(1.15)}}
+.trophy-box{
+  position:relative;width:86px;height:86px;margin:0 auto;border-radius:var(--r-lg);
+  background:linear-gradient(160deg,rgba(255,194,75,.2),rgba(255,194,75,.04));
+  display:grid;place-items:center;
+}
+.trophy-box .material-symbols-outlined{font-size:46px;color:var(--state-value);filter:drop-shadow(0 0 20px rgba(255,194,75,.8))}
+.gc-tag{
+  position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);
+  font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.08em;
+  padding:4px 10px;border-radius:var(--r-full);background:var(--state-value);color:#271900;
+  text-transform:uppercase;white-space:nowrap;
+}
+.champ-h{margin:24px 0 0;font-size:28px;line-height:33px;font-weight:800;letter-spacing:-.02em}
+.champ-s{font-size:13px;color:var(--text-secondary);margin-top:7px}
+
+.sq-card{display:flex;align-items:center;gap:11px;margin-top:16px;padding:12px;border-radius:var(--r);background:var(--surface-lowest);text-align:left}
+.sq-ic{width:40px;height:40px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;background:rgba(46,255,199,.1);color:var(--state-live)}
+.sq-n{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sq-n .material-symbols-outlined{font-size:15px;color:var(--state-live)}
+.sq-id{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--text-muted);margin-top:3px;text-transform:uppercase}
+.sq-rank{margin-left:auto;font-family:var(--f-mono);font-size:11px;font-weight:700;padding:5px 10px;border-radius:var(--r-full);background:var(--surface-highest);color:var(--text-secondary)}
+
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.st{background:var(--surface-lowest);border-radius:var(--r);padding:11px 6px;text-align:center}
+.st .v{font-family:var(--f-mono);font-size:22px;font-weight:700;letter-spacing:-.01em}
+.st .v.mint{color:var(--state-live)}
+.st .v.gold{color:var(--state-value)}
+.st .k{font-family:var(--f-mono);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:5px}
+
+.mvp{display:flex;align-items:center;gap:11px;margin-top:10px;padding:11px;border-radius:var(--r);background:var(--surface-lowest)}
+.mvp-f{position:relative;width:42px;height:42px;flex:0 0 auto;border-radius:50%;overflow:hidden;border:2px solid var(--state-value)}
+.mvp-f img{width:100%;height:100%;object-fit:cover;display:block}
+.mvp-n{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700}
+.mvp-tag{font-family:var(--f-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:rgba(255,194,75,.18);color:var(--state-value);text-transform:uppercase}
+.mvp-s{font-family:var(--f-mono);font-size:11px;color:var(--text-secondary);margin-top:4px}
+.mvp .material-symbols-outlined.medal{margin-left:auto;font-size:22px;color:var(--accent-soft)}
+
+.prow{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:var(--r);background:var(--surface-lowest)}
+.prow + .prow{margin-top:8px}
+.prow .dot{margin-top:6px}
+.prow-t{font-size:14px;font-weight:600;flex:1;min-width:0}
+.prow-v{font-family:var(--f-mono);font-size:15px;font-weight:700;color:var(--state-value);text-align:right;flex:0 0 auto}
+
+.escrow{
+  display:flex;align-items:center;gap:12px;margin-top:10px;padding:14px;
+  border-radius:var(--r);background:var(--surface-high);
+}
+.escrow-t{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.escrow-d{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--text-secondary);margin-top:3px;text-transform:uppercase}
+.escrow-v{margin-left:auto;text-align:right;flex:0 0 auto}
+.escrow-v .n{font-family:var(--f-mono);font-size:24px;font-weight:700;color:var(--state-value);letter-spacing:-.02em}
+.escrow-v .l{font-family:var(--f-mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;margin-top:3px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.split-c{padding:11px;border-radius:var(--r);background:var(--surface-lowest)}
+.split-n{display:flex;align-items:baseline;gap:6px}
+.split-n b{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.split-n span{margin-left:auto;font-family:var(--f-mono);font-size:10px;color:var(--state-value);text-transform:uppercase}
+.split-v{display:flex;align-items:baseline;margin-top:7px}
+.split-v .k{font-family:var(--f-mono);font-size:11px;color:var(--text-muted)}
+.split-v .v{margin-left:auto;font-family:var(--f-mono);font-size:14px;font-weight:700;color:var(--state-live)}
+
+.confetti{position:absolute;inset:0;z-index:400;pointer-events:none;overflow:hidden}
+.cfti{position:absolute;top:-16px;width:8px;height:13px;opacity:0;animation:cftiFall linear forwards}
+@keyframes cftiFall{0%{opacity:1;transform:translateY(0) rotateZ(0)}100%{opacity:.05;transform:translateY(960px) rotateZ(720deg)}}
+
+/* ==========================================================================
+   DOCK / SHEETS / TOASTS / TABBAR
+   ========================================================================== */
+/* Stitch sticky action area — lives at the END of the scroll content and
+   pins to the bottom edge, so it does NOT permanently cover the viewport. */
+.dock{
+  position:sticky;bottom:0;z-index:40;
+  margin:16px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(11,14,25,.95);backdrop-filter:blur(20px);
+  box-shadow:0 -8px 24px rgba(0,0,0,.7);
+}
+.dock-meta{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.dock-k{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.dock-v{font-family:var(--f-mono);font-size:18px;font-weight:700;letter-spacing:-.01em}
+.dock-r{margin-left:auto}
+.dock-row{display:flex;gap:9px;align-items:center}
+.dock-nav{
+  width:48px;height:48px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--border-line);color:var(--text-secondary);
+  transition:all var(--snap) var(--ease);
+}
+.dock-nav:hover:not(:disabled){border-color:var(--accent-primary);color:var(--accent-soft)}
+.dock-nav:disabled{opacity:.3;cursor:not-allowed}
+.dock-note{text-align:center;font-size:11px;line-height:15px;color:var(--text-muted);margin-top:8px}
+
+/* ---------- Pendu app-shell bottom nav ----------
+   Ported from main_app_shell.dart: floating pill (radius 28, 16px side inset,
+   navBg #1C2333 @95%, shadow blur 24 y+8), active item gets a 56x48 gradient
+   pill (radius 16, primary 18%→8%, 1px border @25%), icon scales 1.12,
+   labels 10px w600/w400, inactive #D7D7D7, badge #EF4444. */
+.tabbar{
+  position:absolute;left:0;right:0;bottom:0;z-index:45;
+  padding:8px 16px calc(8px + env(safe-area-inset-bottom));
+  background:transparent;pointer-events:none;
+}
+.tabpill{
+  display:flex;align-items:center;height:64px;
+  background:rgba(28,35,51,.95);backdrop-filter:blur(20px);
+  border-radius:28px;pointer-events:auto;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.tab{
+  position:relative;flex:1;height:64px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  color:#D7D7D7;transition:color .25s cubic-bezier(.33,1,.68,1);
+}
+.tab-glow{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-radius:16px;
+  background:linear-gradient(180deg,rgba(91,108,255,.18),rgba(91,108,255,.08));
+  border:1px solid transparent;
+  transition:width .3s cubic-bezier(.33,1,.68,1),height .3s cubic-bezier(.33,1,.68,1);
+}
+.tab.on .tab-glow{width:56px;height:48px;border-color:rgba(91,108,255,.25)}
+.tab-ic{
+  position:relative;z-index:1;font-size:20px;line-height:1;
+  display:grid;place-items:center;
+  transition:transform .25s cubic-bezier(.33,1,.68,1);
+}
+.tab.on .tab-ic{transform:scale(1.12)}
+.tab-l{
+  position:relative;z-index:1;font-size:10px;font-weight:400;letter-spacing:.2px;
+  transform:translateY(.15em);
+  transition:transform .25s cubic-bezier(.33,1,.68,1),font-weight .2s;
+}
+.tab.on{color:var(--accent-primary)}
+.tab.on .tab-l{font-weight:600;transform:none}
+.tab:hover:not(.on){color:#fff}
+.tab-badge{
+  position:absolute;top:-5px;right:-9px;
+  min-width:16px;padding:1px 4px;border-radius:10px;
+  background:#EF4444;border:1.5px solid #1C2333;
+  font-family:var(--f-ui);font-size:9px;font-weight:700;line-height:1.2;color:#fff;
+  box-shadow:0 0 6px rgba(239,68,68,.5);
+}
+
+.scrim{
+  position:absolute;inset:0;z-index:100;background:rgba(4,6,14,.78);backdrop-filter:blur(5px);
+  opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s;
+}
+.scrim.open{opacity:1;visibility:visible}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:101;
+  background:var(--surface-container);border-top:1px solid var(--border-elev);
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+  transform:translateY(102%);visibility:hidden;pointer-events:none;
+  transition:transform .36s var(--ease-out),visibility .36s;
+  max-height:88%;display:flex;flex-direction:column;
+  box-shadow:0 -20px 60px rgba(0,0,0,.85);
+}
+.sheet.open{transform:none;visibility:visible;pointer-events:auto}
+.grab{width:36px;height:4px;border-radius:999px;background:var(--surface-highest);margin:10px auto 0;flex:0 0 auto}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:12px 16px;flex:0 0 auto}
+.sheet-h h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.sheet-h .material-symbols-outlined.lead{font-size:22px;color:var(--state-value)}
+.sheet-x{
+  margin-left:auto;width:32px;height:32px;flex:0 0 auto;border-radius:var(--r);display:grid;place-items:center;
+  background:var(--surface-high);color:var(--text-secondary);transition:color var(--snap)
+}
+.sheet-x:hover{color:var(--state-urgent)}
+.sheet-b{padding:0 16px 14px;overflow-y:auto;flex:1 1 auto}
+.sheet-f{padding:12px 16px calc(14px + env(safe-area-inset-bottom));flex:0 0 auto;border-top:1px solid var(--border-soft)}
+
+.toasts{position:absolute;left:0;right:0;top:72px;z-index:300;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 16px}
+.toast{
+  display:flex;align-items:center;gap:9px;padding:10px 15px;border-radius:var(--r-full);
+  background:rgba(28,35,64,.97);backdrop-filter:blur(14px);border:1px solid var(--border-elev);
+  font-size:13px;font-weight:600;max-width:100%;
+  box-shadow:0 14px 36px rgba(0,0,0,.9);
+  animation:tIn .25s var(--ease-out),tOut .3s var(--ease) 2.6s forwards;
+}
+.toast .material-symbols-outlined{font-size:17px}
+@keyframes tIn{from{opacity:0;transform:translateY(-12px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
+.toast.ok{border-color:rgba(46,255,199,.5);color:var(--state-live)}
+.toast.warn{border-color:rgba(255,59,105,.5);color:var(--state-urgent)}
+.toast.gold{border-color:rgba(255,194,75,.5);color:var(--state-value)}
+
+.mono{font-family:var(--f-mono)}
+.mint{color:var(--state-live)}
+.gold{color:var(--state-value)}
+.red{color:var(--state-urgent)}
+.muted{color:var(--text-muted)}
+.sec{color:var(--text-secondary)}
+.mt10{margin-top:10px}.mt12{margin-top:12px}
+
+/* ==========================================================================
+   HUB (entry point)
+   ========================================================================== */
+.hubtabs{display:flex;gap:8px;margin-bottom:4px}
+.hubtab{
+  flex:0 0 auto;height:34px;padding:0 14px;border-radius:var(--r-full);
+  background:var(--surface-container);color:var(--text-secondary);
+  font-size:13px;font-weight:600;transition:all var(--snap) var(--ease);
+}
+.hubtab.on{background:rgba(120,134,255,.16);color:var(--accent-primary)}
+.hubtab:hover:not(.on){background:var(--surface-high);color:var(--text-primary)}
+
+.tcard{
+  display:block;width:100%;text-align:left;border-radius:var(--r-md);overflow:hidden;
+  background:var(--surface-container);box-shadow:0 12px 32px rgba(0,0,0,.6);
+  transition:transform var(--snap) var(--ease),box-shadow var(--snap) var(--ease);
+}
+.tcard:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(0,0,0,.75)}
+.tcard:active{transform:scale(.99)}
+.tcard-thumb{position:relative;height:152px;overflow:hidden}
+.tcard-thumb img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.05)}
+.tcard-live{position:absolute;top:10px;left:10px}
+.tcard-pool{
+  position:absolute;top:10px;right:10px;
+  padding:5px 11px;border-radius:var(--r-full);
+  background:rgba(11,14,25,.88);backdrop-filter:blur(10px);
+  border:1px solid rgba(249,188,70,.45);
+  font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--state-value);
+}
+.tcard-body{padding:14px}
+.tcard-n{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.tcard-m{display:flex;flex-wrap:wrap;gap:12px;margin-top:9px}
+.tcard-m>span{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11.5px;color:var(--text-secondary)}
+.tcard-m .material-symbols-outlined{font-family:'Material Symbols Outlined'!important}
+.tcard-m .material-symbols-outlined{font-size:14px}
+.tcard-m .gold{color:var(--state-value)}
+.tcard-cta{
+  display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--border-soft);
+  font-size:13px;font-weight:600;color:var(--accent-primary);
+}
+.tcard-cta .material-symbols-outlined{font-size:16px}
+
+.tmini{
+  display:flex;align-items:center;gap:11px;padding:10px;margin-top:8px;
+  border-radius:var(--r-md);background:var(--surface-container);
+  transition:background var(--snap) var(--ease);cursor:pointer;
+}
+.tmini:hover{background:var(--surface-high)}
+.tmini img{width:44px;height:44px;border-radius:var(--r);object-fit:cover;flex:0 0 auto}
+.tmini-n{font-size:14.5px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tmini-m{font-family:var(--f-mono);font-size:11px;color:var(--text-muted);margin-top:4px}
+.tmini .chip{margin-left:auto;flex:0 0 auto}
+
+/* ==========================================================================
+   RESPONSIVE — phone (bottom nav)  /  web (pendu-web sidebar)
+   ========================================================================== */
+.sidebar{display:none}
+
+@media (max-width:460px){
+  body{padding:0}
+  .device{height:100vh;max-width:100%;border-radius:0;border:0}
+}
+
+/* ---------- WEB / DESKTOP ---------- */
+@media (min-width:1024px){
+  body{padding:0;align-items:stretch;justify-content:flex-start}
+
+  /* pendu-web sidebar: 17rem, collapses to 5rem */
+  .sidebar{
+    display:flex;flex-direction:column;
+    /* body is a flex row — set flex-basis, not just width, or the basis wins */
+    flex:0 0 17rem;width:17rem;min-width:0;max-width:17rem;height:100vh;
+    background:var(--surface-lowest);
+    border-right:1px solid var(--border-soft);
+    padding:16px 12px;gap:8px;
+    transition:flex-basis .22s ease,width .22s ease;
+  }
+  .sidebar.mini{flex:0 0 5rem!important;width:5rem!important;min-width:5rem;max-width:5rem;overflow:hidden}
+  .sidebar.mini .sb-l,.sidebar.mini .sb-brandtext,.sidebar.mini .sb-metext,.sidebar.mini .sb-badge{display:none}
+  .sidebar.mini .sb-item{justify-content:center}
+  .sidebar.mini .sb-brand{justify-content:center;flex-wrap:wrap;gap:6px}
+  /* toggle must stay reachable when collapsed, else it is a one-way trap */
+  .sidebar.mini .sb-collapse{margin-left:0}
+
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 14px}
+  .sb-logo{width:40px;height:32px;object-fit:contain;flex:0 0 auto}
+  .sb-name{font-size:17px;font-weight:700;letter-spacing:-.01em;line-height:1}
+  .sb-sub{font-family:var(--f-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-secondary);margin-top:3px}
+  .sb-collapse{
+    margin-left:auto;width:34px;height:34px;border-radius:var(--r);display:grid;place-items:center;
+    color:var(--text-muted);transition:background .15s ease,color .15s ease;
+  }
+  .sb-collapse:hover{background:var(--surface-high);color:var(--text-primary)}
+  .sb-collapse svg{width:17px;height:17px}
+
+  .sb-nav{display:flex;flex-direction:column;gap:4px;flex:1}
+  .sb-item{
+    position:relative;display:flex;align-items:center;gap:12px;
+    height:46px;padding:0 12px;border-radius:var(--r-md);
+    color:var(--text-secondary);cursor:pointer;
+    transition:background .15s ease,color .15s ease;
+  }
+  .sb-item:hover{background:var(--surface-high);color:var(--text-primary)}
+  .sb-item.on{background:var(--surface-high);color:var(--accent-primary)}
+  /* active indicator — 3px left bar, matches sidebar.scss */
+  .sb-item.on::before{
+    content:'';position:absolute;left:0;top:9px;bottom:9px;width:3px;
+    border-radius:0 3px 3px 0;background:var(--accent-btn);
+  }
+  .sb-ic{
+    width:2.4rem;height:2.4rem;flex:0 0 auto;border-radius:var(--r);
+    display:grid;place-items:center;background:rgba(189,194,255,.08);
+  }
+  .sb-item.on .sb-ic{background:rgba(120,134,255,.16)}
+  .sb-ic svg{width:19px;height:19px}
+  .sb-l{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+  .sb-badge{
+    margin-left:auto;min-width:1.1rem;padding:1px 6px;border-radius:999px;
+    background:var(--accent-btn);color:#fff;
+    font-size:10px;font-weight:700;text-align:center;
+  }
+  .sb-foot{border-top:1px solid var(--border-soft);padding-top:10px}
+  .sb-me{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r-md);transition:background .15s}
+  .sb-me:hover{background:var(--surface-high)}
+  .sb-me img{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto}
+  .sb-menm{font-size:13.5px;font-weight:600}
+  .sb-mesub{font-family:var(--f-mono);font-size:10px;color:var(--text-muted);margin-top:2px}
+
+  /* app frame fills the rest; no phone bezel on web */
+  .device{
+    flex:1;max-width:none;height:100vh;border:0;border-radius:0;
+    box-shadow:none;background:var(--bg-base);
+  }
+  /* bottom nav is phone-only */
+  .tabbar{display:none}
+  .screen{padding-bottom:40px}
+
+  /* centre the content column like a real web app */
+  .screen>*{max-width:720px;margin-left:auto;margin-right:auto}
+  .dock{
+    max-width:720px;margin-left:auto;margin-right:auto;
+    border-radius:var(--r-md) var(--r-md) 0 0;
+  }
+  .appbar,.phasebar{padding-left:28px;padding-right:28px}
+  .toasts{top:88px}
+
+  /* wider stream + chat side by side on desktop */
+  .s4-split{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start;max-width:1180px}
+  .screen#s4>*{max-width:1180px}
+}
+
+@media (min-width:1440px){
+  .screen>*{max-width:820px}
+  .dock{max-width:820px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<!-- ══════════ WEB SIDEBAR (≥1024px) — mirrors pendu-web src/components/ui/Sidebar.tsx ══════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <img class="sb-logo" alt="Pendu" src="assets/pendu-logo.png">
+    <div class="sb-brandtext">
+      <div class="sb-name">Pendu</div>
+      <div class="sb-sub">Arena</div>
+    </div>
+    <button class="sb-collapse" id="sbCollapse" title="Collapse sidebar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M16 9l-3 3 3 3"/></svg></button>
+  </div>
+  <nav class="sb-nav">
+    <a class="sb-item" data-sb="0"><span class="sb-ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z"/></svg></span><span class="sb-l">Home</span></a>
+    <a class="sb-item" data-sb="1"><span class="sb-ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-4.9A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/></svg></span><span class="sb-l">Chats</span><span class="sb-badge">3</span></a>
+    <a class="sb-item on" data-sb="2"><span class="sb-ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17v-5a9 9 0 0 1 18 0v5"/><path d="M21 18a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2v2ZM3 18a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2v2Z"/></svg></span><span class="sb-l">Hub</span></a>
+    <a class="sb-item" data-sb="3"><span class="sb-ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.1 5.6-5.5 2.1 2.1-5.6 5.5-2.1Z"/></svg></span><span class="sb-l">Discover</span></a>
+    <a class="sb-item" data-sb="4"><span class="sb-ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="sb-l">Profile</span></a>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-me">
+      <img alt="You" src="assets/avatar.png">
+      <div class="sb-metext"><div class="sb-menm">DeadlyKing</div><div class="sb-mesub">Squad captain</div></div>
+    </div>
+  </div>
+</aside>
+
+<div class="device" id="device">
+
+  <!-- ══════════ APP BAR ══════════ -->
+  <header class="appbar">
+    <div class="logo"><img alt="Pendu Arena" src="assets/pendu-logo.png"></div>
+    <div style="min-width:0">
+      <div class="brand-n">Pendu Arena</div>
+      <div class="brand-s">Live Tournaments</div>
+    </div>
+    <div class="gold-chip" id="goldChip">
+      <span class="material-symbols-outlined ms-fill">monetization_on</span>
+      <span class="gold-v" id="goldV">12,400</span>
+    </div>
+    <button class="bell" onclick="fx.tap()">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="dot-n"></span>
+    </button>
+    <div class="me">
+      <img alt="You" src="assets/avatar.png">
+      <span class="on"></span>
+    </div>
+  </header>
+
+  <!-- ══════════ PHASE STEPPER ══════════ -->
+  <div class="phasebar">
+    <div class="phases scroll" id="phases">
+      <button class="phase active" data-step="0"><span class="phase-i"><i class="fa-solid fa-headset" style="font-size:9px"></i></span><span class="phase-n">Hub</span></button>
+      <button class="phase" data-step="1"><span class="phase-i">1</span><span class="phase-n">Lobby</span></button>
+      <button class="phase" data-step="2"><span class="phase-i">2</span><span class="phase-n">Roster</span></button>
+      <button class="phase" data-step="3"><span class="phase-i">3</span><span class="phase-n">Check-In</span></button>
+      <button class="phase" data-step="4"><span class="phase-i">4</span><span class="phase-n">Stream</span></button>
+      <button class="phase" data-step="5"><span class="phase-i">5</span><span class="phase-n">Bracket</span></button>
+      <button class="phase" data-step="6"><span class="phase-i">6</span><span class="phase-n">Payout</span></button>
+    </div>
+    <div class="rail"><div class="rail-f" id="railF"></div></div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <!-- ══════════ VIEWPORT ══════════ -->
+  <main class="viewport">
+
+    <!-- ─────── PHASE 1 · LOBBY ─────── -->
+    <!-- ─────── PHASE 0 · HUB (entry point) ─────── -->
+    <section class="screen active scroll" id="s0">
+      <div class="subhead">
+        <div style="min-width:0">
+          <h1>Hub</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>3 tournaments live now</span></div>
+        </div>
+        <button class="back" style="margin-left:auto" onclick="fx.tap()"><span class="material-symbols-outlined">search</span></button>
+      </div>
+
+      <div class="hubtabs">
+        <button class="hubtab on" onclick="fx.tap()">Tournaments</button>
+        <button class="hubtab" onclick="fx.tap()">Parties</button>
+        <button class="hubtab" onclick="fx.tap()">Squads</button>
+      </div>
+
+      <div class="sect"><h3>Featured</h3><span class="right">Ends in 2h</span></div>
+
+      <!-- the tournament you enter -->
+      <button class="tcard" id="enterTournament">
+        <div class="tcard-thumb">
+          <img alt="Free Fire Championship S4" src="assets/gameplay-hero.jpg">
+          <div class="showcase-scrim"></div>
+          <span class="hud-chip hud-live tcard-live"><span class="wave"><i></i><i></i><i></i></span>Registration Open</span>
+          <span class="tcard-pool">₦250,000</span>
+        </div>
+        <div class="tcard-body">
+          <div class="tcard-n">Free Fire Championship S4</div>
+          <div class="tcard-m">
+            <span><span class="material-symbols-outlined">groups</span>48/64</span>
+            <span><span class="material-symbols-outlined">sports_esports</span>Squad 4v4</span>
+            <span class="gold"><span class="material-symbols-outlined">payments</span>₦1,500</span>
+          </div>
+          <div class="tcard-cta">Tap to view lobby <span class="material-symbols-outlined">arrow_forward</span></div>
+        </div>
+      </button>
+
+      <div class="sect"><h3>More Tournaments</h3></div>
+      <div class="tmini">
+        <img alt="" src="assets/crest1.jpg">
+        <div style="min-width:0">
+          <div class="tmini-n">CODM Lagos Invitational</div>
+          <div class="tmini-m">Starts in 6h · ₦80,000 · 24/32</div>
+        </div>
+        <span class="chip">Open</span>
+      </div>
+      <div class="tmini">
+        <img alt="" src="assets/crest3.jpg">
+        <div style="min-width:0">
+          <div class="tmini-n">PUBG Naija Clash Weekly</div>
+          <div class="tmini-m">Live now · ₦45,000 · 16/16</div>
+        </div>
+        <span class="chip chip-live"><span class="dot"></span>Live</span>
+      </div>
+      <div class="tmini">
+        <img alt="" src="assets/crest5.jpg">
+        <div style="min-width:0">
+          <div class="tmini-n">EA FC Showdown S2</div>
+          <div class="tmini-m">Tomorrow · ₦120,000 · 9/16</div>
+        </div>
+        <span class="chip">Open</span>
+      </div>
+    </section>
+
+    <section class="screen scroll" id="s1">
+      <div class="subhead">
+        <button class="back" onclick="fx.tap()"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Tournament Lobby</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Phase 1: Registration Open</span></div>
+        </div>
+      </div>
+
+      <!-- Stitch hero showcase card: thumbnail image + details in ONE card -->
+      <div class="showcase">
+        <div class="showcase-thumb">
+          <img alt="Free Fire Championship S4" src="assets/gameplay-hero.jpg">
+          <div class="showcase-scrim"></div>
+          <div class="showcase-top">
+            <span class="hud-chip"><span class="material-symbols-outlined" style="color:var(--accent-primary)">sports_esports</span>Squad 4v4</span>
+            <span class="hud-chip hud-live"><span class="wave"><i></i><i></i><i></i></span>Registration Open</span>
+          </div>
+          <div class="showcase-count">
+            <span class="material-symbols-outlined" style="color:var(--accent-primary)">timer</span>
+            <span>Starts in <b id="startsIn">02:44:55</b></span>
+          </div>
+        </div>
+        <div class="showcase-body">
+          <div class="ttl-k">Season Championship</div>
+          <h2 class="ttl">Free Fire Championship S4</h2>
+          <div class="pool">
+            <div class="pool-ic"><span class="material-symbols-outlined ms-fill">military_tech</span></div>
+            <div>
+              <div class="pool-k">Total Prize Pool</div>
+              <div class="pool-v">₦250,000 Gold</div>
+            </div>
+            <span class="chip" style="margin-left:auto"><span class="material-symbols-outlined" style="color:var(--state-value);font-size:13px">workspace_premium</span>Tier 1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="slots-top">
+          <span class="material-symbols-outlined">groups</span>
+          <span class="slots-k">Slots Occupied</span>
+          <span class="slots-v" id="slotsV">48 / 64 Teams Filled</span>
+        </div>
+        <div class="track"><div class="track-f" id="slotsBar" style="width:75%"></div></div>
+        <div class="tri">
+          <div class="tri-c"><div class="tri-k">Entry Fee</div><div class="tri-v mono gold">₦1,500</div></div>
+          <div class="tri-c"><div class="tri-k">Server</div><div class="tri-v">Africa/West</div></div>
+          <div class="tri-c"><div class="tri-k">Format</div><div class="tri-v">Single Elim</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill">shield</span>
+          <h2>Registered Squads</h2>
+          <span class="right mono" style="font-size:11px;color:var(--accent-soft)" id="crestCount">48 Squads</span>
+        </div>
+        <div class="crests scroll" id="crests"></div>
+      </div>
+
+      <div class="card">
+        <div class="org">
+          <div class="org-ic"><span class="material-symbols-outlined ms-fill">settings</span></div>
+          <div style="min-width:0">
+            <div class="org-n">Apex Gaming League <span class="material-symbols-outlined ms-fill">verified</span></div>
+            <div class="org-s">Verified Tournament Host</div>
+          </div>
+          <span class="rate"><span class="material-symbols-outlined ms-fill">star</span>4.9</span>
+        </div>
+        <div class="rule"><div class="rule-i">1</div><div><div class="rule-t">Mobile Touch Screen Only</div><div class="rule-d">Emulator, iPad/Tablet, or PC macros are strictly banned under telemetry disqualification.</div></div></div>
+        <div class="rule"><div class="rule-i">2</div><div><div class="rule-t">Strict 15-Minute Check-in</div><div class="rule-d">All 4 players must hit Ready in the match lobby. Unready teams forfeit their seed.</div></div></div>
+        <div class="rule"><div class="rule-i">3</div><div><div class="rule-t">Match Result Verification</div><div class="rule-d">Team captains must upload victory screenshots for anti-cheat OCR review.</div></div></div>
+        <button class="rulebook" onclick="fx.tap()">View Full Rulebook &amp; Map Pool <span class="material-symbols-outlined">arrow_forward</span></button>
+      </div>
+    </section>
+
+    <!-- ─────── PHASE 2 · ROSTER ─────── -->
+    <section class="screen scroll" id="s2">
+      <div class="subhead">
+        <button class="back" onclick="go(1)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Squad Registration</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Phase 2: Roster Lock</span></div>
+        </div>
+      </div>
+
+      <div class="entry-card">
+        <div class="entry-pool"><div class="k">Entry Pool</div><div class="v">₦1,500</div></div>
+        <div style="display:flex;gap:6px;margin-bottom:9px">
+          <span class="chip">Squad 4v4</span>
+          <span class="chip chip-live"><span class="dot"></span>Tier 1</span>
+        </div>
+        <h2 style="margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em;max-width:62%">Free Fire Championship S4</h2>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+          <span class="material-symbols-outlined" style="font-size:15px;color:var(--text-secondary)">schedule</span>
+          <span class="mono sec" style="font-size:12px">Lock closes in <b id="lockIn">42m 18s</b></span>
+        </div>
+      </div>
+
+      <div class="sect"><h3>Active Roster <span id="rosterN">(4/4)</span></h3><span class="right" id="editRoster" style="color:var(--accent-soft);cursor:pointer">⚙ Edit Roster</span></div>
+      <div class="card">
+        <div id="roster"></div>
+        <div class="verified-strip" id="verStrip">
+          <span class="material-symbols-outlined ms-fill">verified_user</span>All 4 Squad Members Verified &amp; Ready
+        </div>
+      </div>
+
+      <div class="sect"><h3>Payment Summary</h3><span class="right">Escrow System</span></div>
+      <div class="card">
+        <div class="pay-row"><span>Squad Entry Fee</span><span class="v">₦1,500</span></div>
+        <div class="pay-row"><span>Available Vault Balance</span><span class="v gold" id="vaultBal">₦12,400</span></div>
+        <div class="pay-row tot"><span style="font-weight:600">Balance After Entry</span><span class="v mint" id="balAfter">₦10,900</span></div>
+      </div>
+
+      <label class="agree" id="agree">
+        <span class="agree-box"><span class="material-symbols-outlined ms-fill">check</span></span>
+        <span>
+          <span class="agree-t">15-Minute Check-in &amp; Rules</span>
+          <span class="agree-d">I agree to the mandatory check-in window, POV stream requirement, and forfeit penalty for late lobbies.</span>
+        </span>
+      </label>
+    </section>
+
+    <!-- ─────── PHASE 3 · CHECK-IN ─────── -->
+    <section class="screen scroll" id="s3">
+      <div class="subhead">
+        <button class="back" onclick="go(2)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Match Lobby &amp; Check-In</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Phase 3: Lobby Ready</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <span class="chip"><span class="material-symbols-outlined">groups</span>Squad 4v4</span>
+        <span class="chip">Lobby #04</span>
+        <span class="chip chip-live" style="margin-left:auto"><span class="dot"></span>128 Tick</span>
+      </div>
+
+      <div class="urgent" id="urgent">
+        <div class="urgent-ic"><span class="material-symbols-outlined ms-fill">timer</span></div>
+        <div style="min-width:0">
+          <div class="urgent-k"><span class="dot"></span><span id="urgentK">Check-in closes in</span></div>
+          <div class="urgent-d" id="urgentD">Failure to confirm deployment causes instant DQ, slot auto-reallocation &amp; entry stake forfeiture.</div>
+        </div>
+        <div class="urgent-t" id="ciTimer">04:29</div>
+      </div>
+
+      <div class="card mt12 cred-wrap" id="credWrap" style="position:relative">
+        <div class="cred-lock">
+          <span class="material-symbols-outlined" style="font-size:26px;color:var(--text-muted)">lock</span>
+          <p>Check in to unlock credentials</p>
+        </div>
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill" style="color:var(--accent-soft)">vpn_key</span>
+          <h2 style="font-size:15px;font-family:var(--f-mono);letter-spacing:.04em;text-transform:uppercase">Room Credentials</h2>
+          <span class="chip chip-live right" id="credChip"><span class="material-symbols-outlined">lock_open</span>Unlocked</span>
+        </div>
+        <div class="cred-f">
+          <div><div class="cred-k">Custom Room ID</div><div class="cred-v blue" id="roomId">884-902-12</div></div>
+          <button class="copy" data-copy="roomId"><span class="material-symbols-outlined">content_copy</span>Copy</button>
+        </div>
+        <div class="cred-f">
+          <div><div class="cred-k">Room Password</div><div class="cred-v gold" id="roomPw">RX-7920</div></div>
+          <button class="copy" data-copy="roomPw"><span class="material-symbols-outlined">content_copy</span>Copy</button>
+        </div>
+        <div class="note">
+          <span class="material-symbols-outlined ms-fill">shield</span>
+          <p>Strict telemetry monitoring. Sharing credentials outside the registered squad triggers an automated account lock.</p>
+        </div>
+        <button class="launch" onclick="fx.click();toast('Launching Free Fire client…','ok')">
+          <span class="material-symbols-outlined">stadia_controller</span>Launch Client &amp; Auto-Join Lobby
+          <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span>
+        </button>
+      </div>
+
+      <div class="sect"><h3>Roster Verification</h3><span class="right mono mint" id="ciTally">38 / 48 Squads</span></div>
+      <div class="track" style="margin-bottom:8px"><div class="track-f" id="ciBar" style="width:79%"></div></div>
+      <div style="display:flex;margin-bottom:12px">
+        <span class="mono sec" style="font-size:11px">Capacity: <b id="ciPct">79%</b> Ready</span>
+        <span class="mono gold right" style="margin-left:auto;font-size:11px" id="ciLeft">10 Slots Awaiting</span>
+      </div>
+      <div id="teams"></div>
+    </section>
+
+    <!-- ─────── PHASE 4 · STREAM ─────── -->
+    <section class="screen scroll" id="s4">
+      <div class="subhead">
+        <button class="back" onclick="go(3)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Match Stream — Grand Finals</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Phase 4: Match In-Progress</span></div>
+        </div>
+      </div>
+
+      <div class="stream">
+        <div class="stream-vp" id="streamVp">
+          <video id="vid" muted loop playsinline preload="auto" poster="assets/gameplay-hero.jpg" src="assets/gameplay.mp4"></video>
+          <div class="scanlines"></div>
+          <div class="floatlayer" id="floatlayer"></div>
+          <div class="splash" id="splash"></div>
+          <div class="hud">
+            <div class="hud-r">
+              <span class="hud-chip hud-live"><span class="wave"><i></i><i></i><i></i></span>Live</span>
+              <span class="hud-chip"><span class="material-symbols-outlined">visibility</span><span id="viewers">1.4K</span></span>
+              <span class="hud-chip hud-score">VIPER <b id="scA">12K</b> VS <i id="scB">8K</i></span>
+            </div>
+            <div class="zone-alert"><span class="material-symbols-outlined ms-fill" style="font-size:15px">local_fire_department</span><span id="zoneTxt">Zone 4 collapsing · 3 squads left</span></div>
+          </div>
+        </div>
+        <div class="stream-bar">
+          <button class="sb-btn" id="muteBtn"><span class="material-symbols-outlined">volume_off</span></button>
+          <span class="sb-sync"><span class="dot"></span><span id="latency">12ms</span> Synced</span>
+          <span class="sb-q">1080p60</span>
+          <button class="sb-btn" id="fsBtn"><span class="material-symbols-outlined">fullscreen</span></button>
+        </div>
+      </div>
+
+      <div class="card mt12">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill">forum</span>
+          <h2>Live Squad Comms</h2>
+          <span class="right chip"><span class="material-symbols-outlined">push_pin</span>Slow 3s</span>
+        </div>
+        <div class="chat scroll" id="chat"></div>
+        <div class="chatbar">
+          <input id="chatIn" type="text" placeholder="Send a message…" maxlength="120" autocomplete="off">
+          <button class="giftbtn" id="giftBtn"><span class="material-symbols-outlined ms-fill">redeem</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── PHASE 5 · BRACKET ─────── -->
+    <section class="screen scroll" id="s5">
+      <div class="subhead">
+        <button class="back" onclick="go(4)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Tournament Bracket</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Phase 5: Grand Finals · BO3</span></div>
+        </div>
+      </div>
+
+      <div class="stage-tabs scroll">
+        <button class="stage-tab" onclick="fx.tap()"><span class="material-symbols-outlined">check_circle</span>Quarter Finals</button>
+        <button class="stage-tab" onclick="fx.tap()"><span class="material-symbols-outlined">check_circle</span>Semi-Finals</button>
+        <button class="stage-tab on" onclick="fx.tap()"><span class="dot"></span>Finals</button>
+      </div>
+
+      <div class="card">
+        <div class="card-t">
+          <span class="material-symbols-outlined">account_tree</span>
+          <h2>Championship Knockout Tree</h2>
+          <span class="right chip">BO3</span>
+        </div>
+
+        <div class="bhead"><span class="k">Semifinal 1</span><span class="s">Match Complete</span></div>
+        <div class="bmatch">
+          <div class="brow win"><span class="material-symbols-outlined ms-fill">emoji_events</span><span class="brow-n">Lagos Xtreme</span><span class="win-tag">Winner</span><span class="brow-s">2</span></div>
+          <div class="brow out"><span class="material-symbols-outlined">shield</span><span class="brow-n">Cyber Titans</span><span class="brow-s">1</span></div>
+        </div>
+
+        <div class="bconn"></div>
+
+        <div class="blive" id="blive">
+          <div class="blive-h">
+            <span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span>
+            <span class="k" id="bliveK">Match 3 in progress</span>
+            <span class="r" id="bliveR">Tied 1 — 1</span>
+          </div>
+          <div class="blive-b">
+            <div class="blive-t">
+              <div class="n"><span class="material-symbols-outlined ms-fill">verified</span>Lagos Xtreme</div>
+              <div class="s">Seed #1</div>
+            </div>
+            <div class="blive-sc"><div class="v"><span id="gfA">1</span> : <span id="gfB">1</span></div><div class="l">DECIDER</div></div>
+            <div class="blive-t right">
+              <div class="n">PH Vipers<span class="material-symbols-outlined ms-fill">verified</span></div>
+              <div class="s">Seed #3</div>
+            </div>
+          </div>
+          <div class="blive-f">
+            <span class="sp"><span class="material-symbols-outlined">visibility</span><span id="bSpec">4.8k</span> Spectating</span>
+            <button class="watch" onclick="go(4)"><span class="dot"></span>Watch Live Stream</button>
+          </div>
+        </div>
+
+        <div class="bconn"></div>
+
+        <div class="bhead"><span class="k">Semifinal 2</span><span class="s">Match Complete</span></div>
+        <div class="bmatch">
+          <div class="brow out"><span class="material-symbols-outlined">shield</span><span class="brow-n">Red Havoc</span><span class="brow-s">0</span></div>
+          <div class="brow win"><span class="material-symbols-outlined ms-fill">emoji_events</span><span class="brow-n">PH Vipers</span><span class="win-tag">Winner</span><span class="brow-s">2</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill">assignment_turned_in</span>
+          <h2>Captain Result Submission</h2>
+          <span class="right material-symbols-outlined ms-fill" style="color:var(--state-live)">shield</span>
+        </div>
+        <span class="chip chip-blue"><span class="material-symbols-outlined">lock</span>Squad #1 Captain Authenticated</span>
+
+        <div class="sect" style="margin-top:14px"><h3>Final Round Placement</h3></div>
+        <div class="place">
+          <span class="material-symbols-outlined ms-fill">military_tech</span>
+          <div>
+            <div class="place-t">1st Place (Victory Booyah!)</div>
+            <div class="place-d">+12 Points &amp; Championship Trophy</div>
+          </div>
+          <span class="material-symbols-outlined ms-fill ok">check_circle</span>
+        </div>
+
+        <div class="sect"><h3>Total Squad Kills</h3><span class="right">+1 pt per confirmed kill</span></div>
+        <div class="stepper">
+          <button class="step-b" id="killMinus"><span class="material-symbols-outlined">remove</span></button>
+          <div class="step-v">
+            <div class="n"><span id="killN">19</span><span>KILLS</span></div>
+            <div class="l">Telemetry Verified</div>
+          </div>
+          <button class="step-b" id="killPlus"><span class="material-symbols-outlined">add</span></button>
+        </div>
+
+        <div class="sect"><h3>Match End Victory Screenshot</h3></div>
+        <div class="shot" id="shot">
+          <span class="material-symbols-outlined shot-ic">add_photo_alternate</span>
+          <div class="shot-t">Tap to attach match screenshot</div>
+          <div class="shot-d">PNG / JPG · max 8 MB</div>
+        </div>
+
+        <div class="note mt12">
+          <span class="material-symbols-outlined ms-fill">shield</span>
+          <p>Anti-cheat AI scans screenshot OCR metadata, kill timestamp logs, and opponent spectator confirmation before prize pool escrow release.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────── PHASE 6 · PAYOUT ─────── -->
+    <section class="screen scroll" id="s6">
+      <div class="subhead">
+        <button class="back" onclick="go(5)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Tournament Results</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Final Verified Match</span></div>
+        </div>
+      </div>
+
+      <div class="champ">
+        <div class="champ-sparkles">
+          <i class="material-symbols-outlined ms-fill" style="left:12%;top:18%;animation-delay:0s">star</i>
+          <i class="material-symbols-outlined ms-fill" style="left:84%;top:14%;animation-delay:.7s">star</i>
+          <i class="material-symbols-outlined ms-fill" style="left:22%;top:62%;animation-delay:1.4s;font-size:9px">star</i>
+          <i class="material-symbols-outlined ms-fill" style="left:90%;top:54%;animation-delay:2.1s;font-size:9px">star</i>
+        </div>
+        <div class="trophy-box">
+          <span class="material-symbols-outlined ms-fill">trophy</span>
+          <span class="gc-tag">Grand Champions</span>
+        </div>
+        <h2 class="champ-h">TOURNAMENT<br>CHAMPIONS!</h2>
+        <div class="champ-s">Free Fire Championship Season 4 · Grand Finals</div>
+
+        <div class="sq-card">
+          <div class="sq-ic"><span class="material-symbols-outlined ms-fill">shield</span></div>
+          <div style="min-width:0">
+            <div class="sq-n">Lagos Xtreme <span class="material-symbols-outlined ms-fill">verified</span></div>
+            <div class="sq-id">Squad ID: #LGX-9940</div>
+          </div>
+          <span class="sq-rank">#1 Rank</span>
+        </div>
+        <div class="stats3">
+          <div class="st"><div class="v mint" id="finalKills">24</div><div class="k">Total Kills</div></div>
+          <div class="st"><div class="v">3/3</div><div class="k">Wins</div></div>
+          <div class="st"><div class="v gold">100%</div><div class="k">Win Rate</div></div>
+        </div>
+        <div class="mvp">
+          <div class="mvp-f"><img alt="MVP" src="assets/avatar.png"></div>
+          <div style="min-width:0">
+            <div class="mvp-n">DeadlyKing <span class="mvp-tag">MVP</span></div>
+            <div class="mvp-s">11 Kills · 4.2 K/D · 98% Acc</div>
+          </div>
+          <span class="material-symbols-outlined ms-fill medal">workspace_premium</span>
+        </div>
+      </div>
+
+      <div class="card mt12">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill" style="color:var(--state-value)">account_balance_wallet</span>
+          <h2>Prize Distribution</h2>
+          <span class="right chip chip-live"><span class="material-symbols-outlined">lock</span>Escrow Verified</span>
+        </div>
+        <div class="prow"><span class="dot gold" style="background:var(--state-value)"></span><span class="prow-t">1st Place Championship Payout</span><span class="prow-v">₦150,000</span></div>
+        <div class="prow"><span class="dot" style="background:var(--state-live)"></span><span class="prow-t">Tournament MVP Bounty Bonus</span><span class="prow-v">₦20,000</span></div>
+        <div class="prow"><span class="dot" style="background:var(--accent-soft)"></span><span class="prow-t">Spectator Gift Share (70%)</span><span class="prow-v" id="giftShare">0 Gold</span></div>
+
+        <div class="escrow">
+          <div>
+            <div class="escrow-t">Squad Leader Escrow Split</div>
+            <div class="escrow-d">Total Cumulative Pool</div>
+          </div>
+          <div class="escrow-v">
+            <div class="n" id="escrowTotal">₦170,000</div>
+            <div class="l">Gold Ready</div>
+          </div>
+        </div>
+        <div class="verified-strip"><span class="material-symbols-outlined ms-fill">check_circle</span>Payout Credited to Vault Escrow #ESC-77492</div>
+      </div>
+
+      <div class="card">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill">groups</span>
+          <h2>Squad Distribution (25%)</h2>
+          <span class="right mono" style="font-size:11px;color:var(--text-muted)">4 Contenders</span>
+        </div>
+        <div class="split" id="splitGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════ DOCK ══════════ -->
+  <div class="dock" id="dock">
+    <div class="dock-meta" id="dockMeta">
+      <div>
+        <div class="dock-k" id="dockK">Registration Fee</div>
+        <div class="dock-v" id="dockV">₦1,500 <span class="mono muted" style="font-size:12px">/ Squad</span></div>
+      </div>
+      <span class="chip chip-live dock-r" id="dockChip"><span class="dot"></span>16 Spots Left</span>
+    </div>
+    <div class="dock-row">
+      <button class="dock-nav" id="prevB" disabled><span class="material-symbols-outlined">chevron_left</span></button>
+      <button class="btn btn-primary" id="cta"><span class="material-symbols-outlined ms-fill">how_to_reg</span>Join Tournament</button>
+      <button class="dock-nav" id="nextB"><span class="material-symbols-outlined">chevron_right</span></button>
+    </div>
+    <div class="dock-note" id="dockNote">Entry fee ₦1,500 will be deducted from your gold vault balance upon confirmation.</div>
+  </div>
+
+  <!-- ══════════ TAB BAR ══════════ -->
+  <!-- Pendu app shell nav — mirrors lib/presentation/screens/main_app_shell.dart
+       (Home / Chats / Hub / Discover / Profile, floating pill, FontAwesome icons) -->
+  <nav class="tabbar">
+    <div class="tabpill">
+      <button class="tab" data-tab="0"><span class="tab-glow"></span><span class="tab-ic"><i class="fa-solid fa-house"></i></span><span class="tab-l">Home</span></button>
+      <button class="tab" data-tab="1"><span class="tab-glow"></span><span class="tab-ic"><i class="fa-regular fa-comment-dots"></i><span class="tab-badge">3</span></span><span class="tab-l">Chats</span></button>
+      <button class="tab on" data-tab="2"><span class="tab-glow"></span><span class="tab-ic"><i class="fa-solid fa-headset"></i></span><span class="tab-l">Hub</span></button>
+      <button class="tab" data-tab="3"><span class="tab-glow"></span><span class="tab-ic"><i class="fa-regular fa-compass"></i></span><span class="tab-l">Discover</span></button>
+      <button class="tab" data-tab="4"><span class="tab-glow"></span><span class="tab-ic"><i class="fa-regular fa-user"></i></span><span class="tab-l">Profile</span></button>
+    </div>
+  </nav>
+
+  <div class="confetti" id="confetti"></div>
+
+  <!-- ══════════ SHEETS ══════════ -->
+  <div class="scrim" id="scrim"></div>
+
+  <!-- Rules sheet -->
+  <div class="sheet" id="sheetRules">
+    <div class="grab"></div>
+    <div class="sheet-h"><span class="material-symbols-outlined lead ms-fill">gavel</span><h2>Match Rules</h2><button class="sheet-x" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="sheet-b">
+      <div class="rule"><div class="rule-i">1</div><div><div class="rule-t">Check-in window</div><div class="rule-d">All 4 members must check in during the 15-minute window before match start. A missed check-in forfeits the slot and the entry stake is not refunded.</div></div></div>
+      <div class="rule"><div class="rule-i">2</div><div><div class="rule-t">Stream participation</div><div class="rule-d">At least one squad member must stream their POV to Pendu Arena for the full match, without delay or kill-feed obstruction.</div></div></div>
+      <div class="rule"><div class="rule-i">3</div><div><div class="rule-t">Device policy</div><div class="rule-d">Mobile devices only. Emulators, macros, and third-party overlays result in immediate disqualification with no refund.</div></div></div>
+      <div class="rule"><div class="rule-i">4</div><div><div class="rule-t">Result submission</div><div class="rule-d">The squad captain uploads a kill-feed screenshot within 15 minutes of match end. Disputes close 15 minutes after results are posted.</div></div></div>
+      <div class="rule"><div class="rule-i">5</div><div><div class="rule-t">Conduct</div><div class="rule-d">Toxicity, teaming, and stream sniping are reviewed by moderators and can void winnings for the entire squad.</div></div></div>
+    </div>
+    <div class="sheet-f"><button class="btn btn-primary" id="acceptRules"><span class="material-symbols-outlined ms-fill">lock</span>Agree &amp; Lock Slot</button></div>
+  </div>
+
+  <!-- Gift sheet -->
+  <div class="sheet" id="sheetGift">
+    <div class="grab"></div>
+    <div class="sheet-h">
+      <span class="material-symbols-outlined lead ms-fill">redeem</span>
+      <h2>Support Your Team</h2>
+      <span class="chip chip-gold" style="margin-left:auto"><span class="material-symbols-outlined ms-fill">monetization_on</span><span id="giftBal">12,400</span></span>
+      <button class="sheet-x" data-close><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="sheet-b">
+      <p class="t-body-sm sec" style="margin:0 0 12px">Gifts boost squad morale &amp; grant fan leaderboard XP. 70% of net proceeds go directly into the Grand Finals prize pot.</p>
+      <div class="recv">
+        <button class="recv-o on" data-recv="lgx"><span class="dot" style="background:var(--state-live)"></span>Lagos Xtreme</button>
+        <button class="recv-o" data-recv="phv"><span class="dot" style="background:var(--text-muted)"></span>PH Vipers</button>
+      </div>
+      <div class="tiers">
+        <button class="tier" data-gift="grenade" data-cost="50" data-emoji="💣" data-name="GG Grenade">
+          <div class="tier-ic">💣</div><div class="tier-n">GG Grenade</div>
+          <div class="tier-c"><span class="material-symbols-outlined ms-fill">monetization_on</span>50</div>
+          <div class="tier-s">Select</div>
+        </button>
+        <button class="tier sel" data-gift="airdrop" data-cost="200" data-emoji="📦" data-name="Airdrop Crate">
+          <span class="tier-pop">Popular</span>
+          <div class="tier-ic">📦</div><div class="tier-n">Airdrop Crate</div>
+          <div class="tier-c"><span class="material-symbols-outlined ms-fill">monetization_on</span>200</div>
+          <div class="tier-s">✓ Active</div>
+        </button>
+        <button class="tier" data-gift="crown" data-cost="1000" data-emoji="👑" data-name="Champion Crown">
+          <div class="tier-ic">👑</div><div class="tier-n">Crown</div>
+          <div class="tier-c"><span class="material-symbols-outlined ms-fill">monetization_on</span>1000</div>
+          <div class="tier-s">Select</div>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-f">
+      <button class="btn btn-gold" id="sendGift"><span class="material-symbols-outlined ms-fill">card_giftcard</span><span id="sendGiftL">Send Gift (200 Coins)</span></button>
+    </div>
+  </div>
+
+  <!-- Submit sheet -->
+  <div class="sheet" id="sheetSubmit">
+    <div class="grab"></div>
+    <div class="sheet-h"><span class="material-symbols-outlined lead ms-fill">verified_user</span><h2>Confirm Result</h2><button class="sheet-x" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="sheet-b">
+      <div class="card" style="background:var(--surface-lowest);border:0">
+        <div class="pay-row"><span class="sec">Match</span><span class="v">Grand Final · BO3</span></div>
+        <div class="pay-row"><span class="sec">Squad</span><span class="v">Lagos Xtreme</span></div>
+        <div class="pay-row"><span class="sec">Placement</span><span class="v gold">1st — Booyah</span></div>
+        <div class="pay-row"><span class="sec">Reported Kills</span><span class="v mint" id="cfKills">19</span></div>
+        <div class="pay-row"><span class="sec">Evidence</span><span class="v">1 screenshot</span></div>
+      </div>
+      <div class="note mt12">
+        <span class="material-symbols-outlined ms-fill" style="color:var(--state-urgent)">warning</span>
+        <p>False reporting is a <b class="red">permanent ban</b> from Pendu Arena. Verify your screenshot matches the reported kill count before submitting.</p>
+      </div>
+    </div>
+    <div class="sheet-f"><button class="btn btn-primary" id="confirmSubmit"><span class="material-symbols-outlined">cloud_upload</span>Submit For Verification</button></div>
+  </div>
+</div>
+
+<!-- ══════════ FULLSCREEN THEATRE ══════════ -->
+<div class="theatre" id="theatre">
+  <div class="theatre-vp" id="theatreVp">
+    <div class="scanlines"></div>
+    <div class="floatlayer" id="floatlayerFs"></div>
+    <div class="splash" id="splashFs"></div>
+    <div class="hud">
+      <div class="hud-r">
+        <span class="hud-chip hud-live"><span class="wave"><i></i><i></i><i></i></span>Live</span>
+        <span class="hud-chip"><span class="material-symbols-outlined">visibility</span><span id="viewersFs">1.4K</span></span>
+        <span class="hud-chip hud-score">VIPER <b id="scAFs">12K</b> VS <i id="scBFs">8K</i></span>
+      </div>
+    </div>
+  </div>
+  <div class="theatre-bar">
+    <button class="sb-btn" id="muteBtnFs"><span class="material-symbols-outlined">volume_off</span></button>
+    <span class="sb-sync"><span class="dot"></span>Synced</span>
+    <span class="sb-q">1080p60</span>
+    <button class="giftbtn" id="giftBtnFs" style="width:44px;height:34px"><span class="material-symbols-outlined ms-fill">redeem</span></button>
+    <button class="sb-btn" id="exitFs"><span class="material-symbols-outlined">fullscreen_exit</span></button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   WEB AUDIO — synthesized SFX
+   ============================================================ */
+const fx=(()=>{
+  let ctx=null;
+  const ac=()=>(ctx||=new (window.AudioContext||window.webkitAudioContext)());
+  const resume=()=>{const c=ac();if(c.state==='suspended')c.resume();return c};
+  function tone(f,t0,dur,{type='sine',gain=.18,glideTo=null,filter=null}={}){
+    const c=resume(),o=c.createOscillator(),g=c.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,t0);
+    if(glideTo)o.frequency.exponentialRampToValueAtTime(glideTo,t0+dur);
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(gain,t0+Math.min(.014,dur*.2));
+    g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    let n=o;
+    if(filter){const bq=c.createBiquadFilter();bq.type=filter.type||'lowpass';
+      bq.frequency.setValueAtTime(filter.freq||1200,t0);
+      if(filter.to)bq.frequency.exponentialRampToValueAtTime(filter.to,t0+dur);
+      bq.Q.value=filter.q??1;n.connect(bq);n=bq;}
+    n.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+dur+.02);
+  }
+  function noise(t0,dur,{gain=.12,freq=1400,to=260,q=1.1}={}){
+    const c=resume(),n=Math.floor(c.sampleRate*dur),buf=c.createBuffer(1,n,c.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
+    const s=c.createBufferSource();s.buffer=buf;
+    const f=c.createBiquadFilter();f.type='bandpass';
+    f.frequency.setValueAtTime(freq,t0);f.frequency.exponentialRampToValueAtTime(to,t0+dur);f.Q.value=q;
+    const g=c.createGain();g.gain.setValueAtTime(gain,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    s.connect(f);f.connect(g);g.connect(c.destination);s.start(t0);s.stop(t0+dur);
+  }
+  return{
+    click(){const t=resume().currentTime;tone(760,t,.055,{type:'triangle',gain:.085,glideTo:480,filter:{type:'lowpass',freq:2600}})},
+    tap(){const t=resume().currentTime;tone(420,t,.04,{type:'sine',gain:.05})},
+    success(){const t=resume().currentTime;
+      [[659.25,0],[880,.09],[1174.66,.18]].forEach(([f,d])=>tone(f,t+d,.38,{type:'sine',gain:.15}));
+      tone(1318.5,t+.18,.5,{type:'triangle',gain:.055});noise(t+.18,.3,{gain:.05,freq:5200,to:1800});},
+    gift(tier=1){const t=resume().currentTime;
+      noise(t,.26,{gain:.1+tier*.02,freq:400,to:3200+tier*700,q:.8});
+      tone(160+tier*40,t+.14,.34,{type:'sawtooth',gain:.085,glideTo:70,filter:{type:'lowpass',freq:1500,to:320}});
+      const sc=[523.25,659.25,783.99,1046.5];
+      for(let i=0;i<tier+1;i++)tone(sc[i%sc.length]*(1+Math.floor(i/4)),t+.18+i*.07,.3,{type:'triangle',gain:.11});
+      if(tier>=3)[1318.5,1567.98,2093].forEach((f,i)=>tone(f,t+.42+i*.08,.45,{type:'sine',gain:.09}));},
+    victory(){const t=resume().currentTime;
+      [[523.25,0,.16],[659.25,.15,.16],[783.99,.3,.16],[1046.5,.45,.5]].forEach(([f,d,l])=>{
+        tone(f,t+d,l,{type:'square',gain:.055,filter:{type:'lowpass',freq:2400}});
+        tone(f,t+d,l,{type:'triangle',gain:.12});});
+      tone(1567.98,t+.45,.7,{type:'sine',gain:.085});tone(2093,t+.6,.6,{type:'sine',gain:.06});
+      tone(130.81,t+.45,.8,{type:'sawtooth',gain:.05,filter:{type:'lowpass',freq:420}});
+      noise(t+.45,.55,{gain:.07,freq:6500,to:900});},
+    error(){const t=resume().currentTime;
+      tone(220,t,.13,{type:'square',gain:.08,glideTo:120,filter:{type:'lowpass',freq:900}});
+      tone(180,t+.1,.17,{type:'square',gain:.07,glideTo:95,filter:{type:'lowpass',freq:800}});},
+    copy(){const t=resume().currentTime;tone(1046.5,t,.07,{type:'sine',gain:.1});tone(1396.9,t+.06,.11,{type:'sine',gain:.08})}
+  };
+})();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state={
+  step:0, gold:12400, fee:1500, registered:false, agreed:false,
+  checkedIn:false, teamsIn:38, giftsSent:0, giftCoins:0,
+  submitted:false, claimed:false, evidence:false, kills:19,
+  viewers:1432, ciSeconds:269, selGift:'airdrop', selCost:200, recv:'Lagos Xtreme'
+};
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const fmt=n=>n.toLocaleString('en-US');
+const pad=n=>String(n).padStart(2,'0');
+const naira=n=>'₦'+fmt(n);
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function toast(msg,kind=''){
+  const icons={ok:'check_circle',warn:'warning',gold:'monetization_on'};
+  const el=document.createElement('div');
+  el.className='toast '+kind;
+  el.innerHTML=`<span class="material-symbols-outlined ms-fill">${icons[kind]||'info'}</span><span>${msg}</span>`;
+  $('#toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3100);
+}
+
+/* ============================================================
+   GOLD / WALLET
+   ============================================================ */
+function setGold(v,{silent=false}={}){
+  state.gold=Math.max(0,v);
+  $('#goldV').textContent=fmt(state.gold);
+  $('#giftBal').textContent=fmt(state.gold);
+  $('#vaultBal').textContent=naira(state.gold);
+  $('#balAfter').textContent=naira(Math.max(0,state.gold-state.fee));
+  if(!silent){
+    const c=$('#goldChip');c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+    setTimeout(()=>c.classList.remove('flash'),900);
+  }
+  $$('.tier').forEach(b=>{b.disabled=state.gold<+b.dataset.cost});
+}
+
+/* ============================================================
+   SHEETS
+   ============================================================ */
+let openS=null;
+function showSheet(id){openS=$(id);$('#scrim').classList.add('open');openS.classList.add('open');fx.click()}
+function closeSheet(){$('#scrim').classList.remove('open');if(openS)openS.classList.remove('open');openS=null}
+$('#scrim').addEventListener('click',closeSheet);
+$$('[data-close]').forEach(b=>b.addEventListener('click',()=>{fx.tap();closeSheet()}));
+
+/* ============================================================
+   NAV
+   ============================================================ */
+const DOCK={
+  1:{k:'Registration Fee',v:'₦1,500 <span class="mono muted" style="font-size:12px">/ Squad</span>',chip:'<span class="dot"></span>16 Spots Left',cls:'chip chip-live dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">how_to_reg</span>Join Tournament',btn:'btn btn-primary',
+     note:'Entry fee ₦1,500 will be deducted from your gold vault balance upon confirmation.'},
+  2:{k:'Squad Entry',v:'₦1,500',chip:'<span class="material-symbols-outlined">shield</span>Anti-Cheat Guard',cls:'chip dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">lock</span>Review Rules &amp; Lock Slot',btn:'btn btn-soft',
+     note:'Slot #49 / 64 claimed · escrow holds your stake until match verification.'},
+  3:{k:'Captain Auth Required',v:'Squad #1',chip:'<span class="dot"></span>Squad Ready',cls:'chip chip-live dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">check_circle</span>Complete Check-In',btn:'btn btn-live',
+     note:'⌁ Discord Voice Active · ⌄ 24ms Latency'},
+  4:{k:'Gift Balance',v:'<span id="dockGold">12,400</span> <span class="mono muted" style="font-size:12px">Gold</span>',chip:'<span class="dot"></span>Live Now',cls:'chip chip-live dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">redeem</span>Support Your Team',btn:'btn btn-gold',
+     note:'70% of gift net proceeds go directly into the Grand Finals prize pot.'},
+  5:{k:'Result Submission',v:'Grand Final',chip:'<span class="material-symbols-outlined">shield</span>OCR Verified',cls:'chip dock-r',
+     cta:'<span class="material-symbols-outlined">cloud_upload</span>Submit Match Results',btn:'btn btn-primary',
+     note:'Anti-cheat AI verifies the screenshot before prize pool escrow release.'},
+  6:{k:'Total Payout',v:'<span id="dockPayout">₦170,000</span>',chip:'<span class="material-symbols-outlined">lock</span>Escrow Ready',cls:'chip chip-gold dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">monetization_on</span>Claim Payout to Wallet',btn:'btn btn-gold',
+     note:'⚡ Instant transfer to primary vault with 0% network fees.'}
+};
+
+function go(n,{sound=true}={}){
+  if(n<0||n>6||n===state.step)return;
+  $('#s'+state.step).classList.remove('active');
+  state.step=n;
+  const cur=$('#s'+n);
+  cur.classList.add('active');cur.scrollTop=0;
+  $$('.phase').forEach(p=>{
+    const i=+p.dataset.step;
+    p.classList.toggle('active',i===n);
+    p.classList.toggle('done',i<n);
+  });
+  $('#railF').style.width=((n+1)/7*100)+'%';
+  /* The CTA is position:sticky, so it must sit inside the scrolling screen it
+     belongs to — not as a fixed sibling overlaying every page. */
+  if(n===0){$('#dock').style.display='none'}else{$('#dock').style.display='';cur.appendChild($('#dock'))}
+  if(n===6)renderSplit();   /* gift share accrues after load — recompute on entry */
+  const ap=$('.phase.active');if(ap)ap.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+  $('#prevB').disabled=n===0;$('#nextB').disabled=n===6;
+  renderDock();
+  n===4?startStream():pauseStream();
+  if(sound)fx.click();
+}
+
+function renderDock(){
+  const d=DOCK[state.step];
+  if(!d)return;   /* step 0 (Hub) has no sticky CTA */
+  $('#dockK').textContent=d.k;
+  $('#dockV').innerHTML=d.v;
+  const chip=$('#dockChip');chip.className=d.cls;chip.innerHTML=d.chip;
+  $('#dockNote').innerHTML=d.note;
+  const cta=$('#cta');cta.innerHTML=d.cta;cta.className=d.btn;cta.disabled=false;
+
+  if(state.step===1&&state.registered){cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Registered — Continue';cta.className='btn btn-live'}
+  if(state.step===2){
+    if(state.registered){cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Slot Locked — Continue';cta.className='btn btn-live'}
+    else if(!state.agreed){cta.disabled=true;cta.innerHTML='<span class="material-symbols-outlined">lock</span>Accept Rules to Continue'}
+  }
+  if(state.step===3){
+    if(state.checkedIn){cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Checked In — Continue';cta.className='btn btn-live'}
+    else if(!state.registered){cta.disabled=true;cta.innerHTML='<span class="material-symbols-outlined">lock</span>Register First'}
+  }
+  if(state.step===4){$('#dockGold')&&($('#dockGold').textContent=fmt(state.gold))}
+  if(state.step===5&&state.submitted){cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Verified — View Payout';cta.className='btn btn-live'}
+  if(state.step===6){
+    $('#dockPayout')&&($('#dockPayout').textContent=naira(170000+Math.round(state.giftCoins*.7)));
+    if(state.claimed){cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Payout Claimed';cta.className='btn btn-live';cta.disabled=true}
+  }
+}
+
+$$('.phase').forEach(p=>p.addEventListener('click',()=>go(+p.dataset.step)));
+$('#prevB').addEventListener('click',()=>go(state.step-1));
+$('#nextB').addEventListener('click',()=>go(state.step+1));
+
+$('#cta').addEventListener('click',()=>{
+  const s=state.step;
+  if(s===1)return state.registered?go(2):go(2);
+  if(s===2)return state.registered?go(3):showSheet('#sheetRules');
+  if(s===3)return state.checkedIn?go(4):doCheckIn();
+  if(s===4)return showSheet('#sheetGift');
+  if(s===5)return state.submitted?go(6):openSubmit();
+  if(s===6)return claim();
+});
+
+/* ============================================================
+   PHASE 1 — LOBBY
+   ============================================================ */
+const CREST_C=[['#00F0FF','#0E7A5E'],['#5B6CFF','#2A3480'],['#FF3B69','#8C1D28'],['#FFC24B','#A8710B'],['#BDC2FF','#3A4BDF'],['#2EFFC7','#00513D']];
+const TEAMS=[['Lagos Xtreme','LGX'],['Cyber Titans','CYT'],['Red Havoc','RDH'],['Delta Nova','DLN'],['PH Vipers','PHV'],['Kano Titans','KNT']];
+
+/* Team crests — real Stitch gameplay art, tinted per team via CSS blend. */
+function crestSvg(tag,i){ return `assets/crest${i%6}.jpg`; }
+function renderCrests(){
+  $('#crests').innerHTML=TEAMS.map(([n,t],i)=>`
+    <div class="crest">
+      <div class="crest-img"><img alt="${n}" src="${crestSvg(t,i)}"><span class="crest-seed">#${i+1}</span></div>
+      <div class="crest-n">${n}</div>
+    </div>`).join('');
+}
+renderCrests();
+
+let startsMs=Date.now()+(2*3600+44*60+55)*1000;
+setInterval(()=>{
+  const t=Math.max(0,Math.floor((startsMs-Date.now())/1000));
+  $('#startsIn').textContent=`${pad(Math.floor(t/3600))}:${pad(Math.floor(t/60)%60)}:${pad(t%60)}`;
+  const l=Math.max(0,Math.floor((startsMs-Date.now())/1000)-2*3600);
+  $('#lockIn').textContent=`${Math.floor(l/60)}m ${pad(l%60)}s`;
+},1000);
+
+let slots=48;
+function setSlots(n){
+  slots=Math.min(64,n);
+  const p=Math.round(slots/64*100);
+  $('#slotsV').textContent=`${slots} / 64 Teams Filled`;
+  $('#slotsBar').style.width=p+'%';
+  $('#crestCount').textContent=slots+' Squads';
+  if(state.step===1){
+    const chip=$('#dockChip');
+    if(chip&&DOCK[1])chip.innerHTML=`<span class="dot"></span>${64-slots} Spots Left`;
+  }
+}
+setInterval(()=>{if(slots<64&&Math.random()<.3)setSlots(slots+1)},8000);
+
+/* ============================================================
+   PHASE 2 — ROSTER
+   ============================================================ */
+const SQUAD=[
+  {n:'DeadlyKing',r:'Captain',kd:'3.82',w:'74%',p:'24ms',c:['#00F0FF','#5B6CFF'],capt:true},
+  {n:'ZaraSniper',r:'Sniper',kd:'2.94',w:'62%',p:'31ms',c:['#2EFFC7','#00513D']},
+  {n:'TundeRush',r:'Rusher',kd:'3.10',w:'68%',p:'19ms',c:['#FF3B69','#8C1D28']},
+  {n:'NkemSupport',r:'Support',kd:'4.05',w:'81%',p:'28ms',c:['#FFC24B','#A8710B']}
+];
+/* Cyberpunk-ish player portrait: dark plate, neon rim light, visor band.
+   Reads as a distinct avatar at 50px rather than a flat silhouette. */
+/* Player portraits — the Stitch cyberpunk avatar, hue-shifted per member. */
+function faceSvg(c,i){ return `assets/player${i%4}.png`; }
+$('#roster').innerHTML=SQUAD.map((p,i)=>`
+  <div class="player">
+    <div class="p-face">
+      <img alt="${p.n}" src="${faceSvg(p.c,i)}">
+      ${p.capt?'<span class="capt"><span class="material-symbols-outlined ms-fill">star</span></span>':''}
+    </div>
+    <div style="min-width:0">
+      <div class="p-n">${p.n}${p.capt?'<span class="p-badge">Captain</span>':''}</div>
+      <div class="p-st">K/D <b>${p.kd}</b> · Win <span class="win">${p.w}</span></div>
+    </div>
+    <div class="p-right">
+      <div class="p-ready"><span class="dot"></span>Ready</div>
+      <div class="p-ping">Ping ${p.p}</div>
+    </div>
+  </div>`).join('');
+
+$('#agree').addEventListener('click',()=>{
+  state.agreed=!state.agreed;
+  $('#agree').classList.toggle('on',state.agreed);
+  fx.tap();renderDock();
+});
+
+function doRegister(){
+  if(state.registered)return;
+  if(state.gold<state.fee){fx.error();toast('Insufficient gold for entry','warn');return}
+  state.registered=true;state.agreed=true;
+  $('#agree').classList.add('on');
+  setGold(state.gold-state.fee);
+  setSlots(slots+1);
+  closeSheet();fx.success();
+  toast('Slot locked · −₦1,500 staked','ok');
+  renderDock();
+  setTimeout(()=>go(3,{sound:false}),900);
+}
+$('#acceptRules').addEventListener('click',doRegister);
+
+/* ============================================================
+   PHASE 3 — CHECK-IN
+   ============================================================ */
+const CI=[
+  {n:'Lagos Xtreme',t:'LGX',s:'in',ready:4,you:true},
+  {n:'Cyber Titans',t:'CYT',s:'in',ready:4},
+  {n:'Red Havoc',t:'RDH',s:'wait',ready:2,left:'02:15'},
+  {n:'Delta Nova',t:'DLN',s:'in',ready:4},
+  {n:'PH Vipers',t:'PHV',s:'in',ready:4}
+];
+function renderTeams(){
+  $('#teams').innerHTML=CI.map((t,i)=>`
+    <div class="team ${t.you?'you':''}">
+      <div class="team-crest">
+        <img alt="${t.n}" src="${crestSvg(t.t,i)}">
+        <span class="team-seed">#${i+1}</span>
+      </div>
+      <div style="min-width:0">
+        <div class="team-n">${t.n}${t.you?'<span class="p-badge">You</span>':''}</div>
+        <div class="team-r">
+          <span class="material-symbols-outlined ${t.ready===4?'ms-fill':''}" style="color:${t.ready===4?'var(--state-live)':'var(--state-value)'}">${t.ready===4?'check_circle':'hourglass_top'}</span>
+          ${t.ready}/4 Players Ready
+        </div>
+      </div>
+      <span class="team-st chip ${t.s==='in'?'chip-live':'chip-red'}">
+        ${t.s==='in'?'<span class="dot"></span>Checked In':'<span class="material-symbols-outlined">timer</span>'+t.left+' Left'}
+      </span>
+    </div>`).join('');
+}
+renderTeams();
+
+function setCI(n){
+  state.teamsIn=Math.min(48,n);
+  const p=Math.round(state.teamsIn/48*100);
+  $('#ciTally').textContent=`${state.teamsIn} / 48 Squads`;
+  $('#ciBar').style.width=p+'%';
+  $('#ciPct').textContent=p+'%';
+  $('#ciLeft').textContent=(48-state.teamsIn)+' Slots Awaiting';
+}
+setCI(38);
+setInterval(()=>{if(state.teamsIn<48&&Math.random()<.4)setCI(state.teamsIn+1)},7000);
+
+setInterval(()=>{
+  if(state.ciSeconds>0)state.ciSeconds--;
+  $('#ciTimer').textContent=`${pad(Math.floor(state.ciSeconds/60))}:${pad(state.ciSeconds%60)}`;
+  if(state.ciSeconds===0&&!state.checkedIn)$('#urgentD').innerHTML='<span class="red">Check-in window closed — slot forfeited.</span>';
+},1000);
+
+function doCheckIn(){
+  if(state.checkedIn)return;
+  if(!state.registered){fx.error();toast('Register your squad first','warn');return}
+  state.checkedIn=true;
+  $('#credWrap').classList.add('open');
+  $('#urgent').classList.add('done');
+  $('#urgentK').textContent='Deployment confirmed';
+  $('#urgentD').innerHTML='Your squad is <b class="mint">checked in</b>. Join the custom room before the timer ends.';
+  setCI(state.teamsIn+1);
+  fx.success();toast('Checked in · credentials unlocked','ok');
+  renderDock();
+}
+
+$$('.copy').forEach(b=>b.addEventListener('click',async()=>{
+  const v=$('#'+b.dataset.copy).textContent.trim();
+  try{await navigator.clipboard.writeText(v)}catch(e){/* clipboard blocked in sandbox */}
+  b.classList.add('ok');
+  b.innerHTML='<span class="material-symbols-outlined">check</span>Copied';
+  fx.copy();toast(`Copied ${v}`,'ok');
+  setTimeout(()=>{b.classList.remove('ok');b.innerHTML='<span class="material-symbols-outlined">content_copy</span>Copy'},1700);
+}));
+
+/* ============================================================
+   PHASE 4 — STREAM  (real video + float comments + fullscreen)
+   ============================================================ */
+const vid=$('#vid'), theatre=$('#theatre'), theatreVp=$('#theatreVp');
+let inTheatre=false;
+
+/* Hero is a static thumbnail (Stitch design) — only the match stream plays video. */
+
+function startStream(){vid.play().catch(()=>{})}
+function pauseStream(){if(!inTheatre)vid.pause()}
+
+/* fullscreen: move the SAME <video> node so playback position is preserved */
+function enterTheatre(){
+  if(inTheatre)return;
+  inTheatre=true;
+  theatreVp.insertBefore(vid,theatreVp.firstChild);
+  theatre.classList.add('on');
+  vid.play().catch(()=>{});
+  if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+  fx.click();
+}
+function exitTheatre(){
+  if(!inTheatre)return;
+  inTheatre=false;
+  $('#streamVp').insertBefore(vid,$('#streamVp').firstChild);
+  theatre.classList.remove('on');
+  if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+  if(state.step===4)vid.play().catch(()=>{});
+  fx.tap();
+}
+$('#fsBtn').addEventListener('click',enterTheatre);
+$('#exitFs').addEventListener('click',exitTheatre);
+$('#giftBtnFs').addEventListener('click',()=>{exitTheatre();setTimeout(()=>showSheet('#sheetGift'),260)});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&inTheatre)exitTheatre()});
+
+function toggleMute(){
+  vid.muted=!vid.muted;
+  const ic=vid.muted?'volume_off':'volume_up';
+  $('#muteBtn').innerHTML=`<span class="material-symbols-outlined">${ic}</span>`;
+  $('#muteBtnFs').innerHTML=`<span class="material-symbols-outlined">${ic}</span>`;
+  fx.tap();
+}
+$('#muteBtn').addEventListener('click',toggleMute);
+$('#muteBtnFs').addEventListener('click',toggleMute);
+
+/* ---------- chat + floating comments ---------- */
+const USERS=[['NeonStriker','#2EFFC7'],['GhostFan99','#BDC2FF'],['Zeezo_NG','#00F0FF'],['bigmikeFF','#7C89FF'],['AyoPlays','#FFC24B'],['Sniper_Jay','#FF3B69'],['chidera.x','#BDC2FF'],['MamaPutGG','#2EFFC7'],['Tobi9ja','#C5C5D8']];
+const LINES=['Viper_Leader with that triple kill was INSANE','Shield battery ready, push the bunker!','LX rotating early, smart move','zone pulling to the bridge 👀','DeadlyKing cracked fr','gloo wall usage is elite','that 1v3 was insane 🔥','my data go finish but I no fit comot 😂','sniper duel!!!','LX for the title 🏆','ref check that last knock','stream quality clean today','no reload M1887 💀','best S4 match so far'];
+const MODS=['Keep comms clean! Final circle closing in 45s.','Reminder: no stream sniping. Reports go to #disputes.','Grand Final result window opens after this match.'];
+
+function addChat(html,cls=''){
+  const c=$('#chat');
+  const el=document.createElement('div');
+  el.className='cmsg '+cls;el.innerHTML=html;
+  c.appendChild(el);
+  while(c.children.length>30)c.firstElementChild.remove();
+  c.scrollTop=c.scrollHeight;
+}
+/* floating fade comment over the stream (both normal + theatre layers) */
+function floatMsg(html,cls=''){
+  [$('#floatlayer'),$('#floatlayerFs')].forEach(layer=>{
+    if(!layer)return;
+    const el=document.createElement('div');
+    el.className='floatmsg '+cls;
+    el.innerHTML=html;
+    const dur=6+Math.random()*3;
+    el.style.setProperty('--dur',dur+'s');
+    el.style.left=(6+Math.random()*30)+'%';
+    el.style.bottom='0';
+    layer.appendChild(el);
+    setTimeout(()=>el.remove(),dur*1000+200);
+  });
+}
+
+function randomChat(){
+  const r=Math.random();
+  if(r<.14){
+    const m=MODS[Math.floor(Math.random()*MODS.length)];
+    addChat(`<span class="mod-tag">Mod</span><span><span class="u" style="color:var(--accent-soft)">Apex_Official:</span> <span class="tx">${m}</span></span>`,'mod');
+    floatMsg(`<b style="color:var(--accent-soft)">Apex_Official</b><span>${m}</span>`);
+  }else{
+    const [u,c]=USERS[Math.floor(Math.random()*USERS.length)];
+    const l=LINES[Math.floor(Math.random()*LINES.length)];
+    addChat(`<span class="u" style="color:${c}">${u}:</span> <span class="tx">${l}</span>`);
+    floatMsg(`<b style="color:${c}">${u}</b><span>${l}</span>`);
+  }
+}
+for(let i=0;i<5;i++)randomChat();
+setInterval(randomChat,2800);
+
+setInterval(()=>{
+  state.viewers+=Math.floor(Math.random()*90)-30;
+  state.viewers=Math.max(900,state.viewers);
+  const t=state.viewers>=1000?(state.viewers/1000).toFixed(1)+'K':state.viewers;
+  $('#viewers').textContent=t;$('#viewersFs').textContent=t;
+  $('#bSpec').textContent=(state.viewers*3.4/1000).toFixed(1)+'k';
+  $('#latency').textContent=(9+Math.floor(Math.random()*8))+'ms';
+},3200);
+
+const ZONES=['Zone 4 collapsing · 3 squads left','Airdrop inbound · sector B','Final circle · 2 squads left','Zone 5 shrinking · 12s'];
+setInterval(()=>{$('#zoneTxt').textContent=ZONES[Math.floor(Math.random()*ZONES.length)]},6000);
+
+setInterval(()=>{
+  if(Math.random()<.45){
+    const a=+$('#scA').textContent.replace('K','')*1000;
+    const nv=a+Math.floor(Math.random()*400);
+    const s=(nv/1000).toFixed(1)+'K';
+    $('#scA').textContent=s;$('#scAFs').textContent=s;
+  }
+},5000);
+
+$('#chatIn').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const v=e.target.value.trim();if(!v)return;
+  const safe=v.replace(/[<>]/g,'');
+  addChat(`<span class="u" style="color:#fff">You:</span> <span class="tx">${safe}</span>`);
+  floatMsg(`<b style="color:#fff">You</b><span>${safe}</span>`);
+  e.target.value='';fx.tap();
+});
+
+/* ---------- gifting ---------- */
+$('#giftBtn').addEventListener('click',()=>showSheet('#sheetGift'));
+$$('.recv-o').forEach(b=>b.addEventListener('click',()=>{
+  $$('.recv-o').forEach(o=>{o.classList.remove('on');o.querySelector('.dot').style.background='var(--text-muted)'});
+  b.classList.add('on');b.querySelector('.dot').style.background='var(--state-live)';
+  state.recv=b.textContent.trim();fx.tap();
+}));
+$$('.tier').forEach(b=>b.addEventListener('click',()=>{
+  $$('.tier').forEach(t=>{t.classList.remove('sel');t.querySelector('.tier-s').textContent='Select'});
+  b.classList.add('sel');b.querySelector('.tier-s').textContent='✓ Active';
+  state.selGift=b.dataset.gift;state.selCost=+b.dataset.cost;
+  $('#sendGiftL').textContent=`Send Gift (${fmt(state.selCost)} Coins)`;
+  fx.tap();
+}));
+
+const RANK={grenade:1,airdrop:2,crown:3};
+const GC={grenade:['#2EFFC7','#5B6CFF','#E0E1F2'],airdrop:['#FFC24B','#5B6CFF','#2EFFC7'],crown:['#FFC24B','#FFD98A','#FF3B69','#5B6CFF']};
+
+$('#sendGift').addEventListener('click',()=>{
+  const btn=$(`.tier[data-gift="${state.selGift}"]`);
+  const cost=state.selCost,name=btn.dataset.name,emoji=btn.dataset.emoji,tier=RANK[state.selGift];
+  if(state.gold<cost){fx.error();toast('Insufficient gold','warn');return}
+
+  setGold(state.gold-cost);
+  state.giftsSent++;state.giftCoins+=cost;
+  closeSheet();
+  if(state.step!==4)go(4,{sound:false});
+
+  fx.gift(tier);
+  splash(emoji,GC[state.selGift],tier);
+
+  addChat(`<div class="gr-ic">${emoji}</div>
+    <div style="min-width:0"><div class="gr-t"><b>You</b> sent a <b>${name}!</b></div>
+    <div class="gr-s">Boosted +${cost/10} Squad XP to ${state.recv}</div></div>
+    <div class="gr-c"><span class="material-symbols-outlined ms-fill">monetization_on</span>${fmt(cost)}</div>`,'giftrow');
+  floatMsg(`<span>${emoji}</span><b>You</b><span>sent ${name}</span>`,'gift');
+  toast(`${emoji} ${name} sent · −${fmt(cost)} gold`,'gold');
+  renderDock();
+});
+
+function splash(emoji,colors,tier){
+  const layers=inTheatre?[$('#splashFs')]:[$('#splash')];
+  layers.forEach(layer=>{
+    if(!layer)return;
+    const ring=document.createElement('div');
+    ring.className='gift-ring';ring.style.borderColor=colors[0];
+    layer.appendChild(ring);setTimeout(()=>ring.remove(),1200);
+
+    const fly=document.createElement('div');
+    fly.className='gift-fly';fly.textContent=emoji;
+    layer.appendChild(fly);setTimeout(()=>fly.remove(),2000);
+
+    const n=14+tier*12;
+    for(let i=0;i<n;i++){
+      const s=document.createElement('div');
+      s.className='spark';
+      const ang=Math.random()*Math.PI*2, dist=60+Math.random()*(70+tier*55);
+      s.style.left='50%';s.style.top='50%';
+      s.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+      s.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+      s.style.background=colors[i%colors.length];
+      s.style.boxShadow=`0 0 10px ${colors[i%colors.length]}`;
+      s.style.animationDelay=(Math.random()*.18)+'s';
+      layer.appendChild(s);setTimeout(()=>s.remove(),1500);
+    }
+  });
+}
+
+/* ============================================================
+   PHASE 5 — SUBMISSION
+   ============================================================ */
+$('#killMinus').addEventListener('click',()=>{state.kills=Math.max(0,state.kills-1);$('#killN').textContent=state.kills;fx.tap()});
+$('#killPlus').addEventListener('click',()=>{state.kills=Math.min(99,state.kills+1);$('#killN').textContent=state.kills;fx.tap()});
+
+$('#shot').addEventListener('click',()=>{
+  if(state.evidence)return;
+  state.evidence=true;
+  const el=$('#shot');
+  el.classList.add('has');
+  el.innerHTML=`
+    <div class="shot-prev">
+      <video src="assets/gameplay.mp4" muted playsinline preload="metadata"></video>
+      <span class="shot-ver"><span class="material-symbols-outlined ms-fill">check_circle</span>File verified · 2.4 MB</span>
+    </div>
+    <div class="shot-meta">
+      <span class="material-symbols-outlined">image</span>
+      <span class="shot-nm">match_booyah_screenshot.png</span>
+      <span class="shot-id">OCR #8921</span>
+    </div>`;
+  const v=el.querySelector('video');
+  v.currentTime=4.2;
+  fx.success();toast('Screenshot attached · OCR queued','ok');
+});
+
+function openSubmit(){
+  if(state.submitted)return;
+  if(!state.evidence){fx.error();toast('Attach a match screenshot first','warn');return}
+  $('#cfKills').textContent=state.kills;
+  showSheet('#sheetSubmit');
+}
+
+$('#confirmSubmit').addEventListener('click',()=>{
+  state.submitted=true;closeSheet();
+  $('#gfA').textContent='2';$('#gfB').textContent='1';
+  $('#bliveK').textContent='Match complete';
+  $('#bliveR').textContent='Lagos Xtreme win 2—1';
+  $('#blive').style.borderColor='var(--state-live)';
+  $('#blive').style.background='rgba(46,255,199,.06)';
+  $('#finalKills').textContent=state.kills+5;
+  fx.success();toast('Result verified · bracket advanced','ok');
+  renderDock();
+  setTimeout(()=>go(6,{sound:false}),900);
+});
+
+/* ============================================================
+   PHASE 6 — PAYOUT
+   ============================================================ */
+const MEMBERS=[['DeadlyKing','Capt'],['ZaraSniper','Sniper'],['TundeRush','Rusher'],['NkemSupport','Support']];
+function renderSplit(){
+  const total=170000+Math.round(state.giftCoins*.7);
+  const each=Math.round(total/4);
+  $('#giftShare').textContent=fmt(Math.round(state.giftCoins*.7))+' Gold';
+  $('#escrowTotal').textContent=naira(total);
+  $('#splitGrid').innerHTML=MEMBERS.map(([n,r])=>`
+    <div class="split-c">
+      <div class="split-n"><b>${n}</b><span>${r}</span></div>
+      <div class="split-v"><span class="k">Share</span><span class="v">${naira(each)}</span></div>
+    </div>`).join('');
+}
+renderSplit();
+
+function claim(){
+  if(state.claimed)return;
+  state.claimed=true;
+  const credited=20000+Math.round(state.giftCoins*.7);
+  fx.victory();confetti();
+  const from=state.gold,to=from+credited,t0=performance.now(),dur=1400;
+  let settled=false;
+  const settle=()=>{if(settled)return;settled=true;setGold(to);renderDock()};
+  (function step(now){
+    if(settled)return;
+    const p=Math.min(1,(now-t0)/dur);
+    if(p>=1)return settle();
+    setGold(Math.round(from+(to-from)*(1-Math.pow(1-p,3))),{silent:true});
+    requestAnimationFrame(step);
+  })(t0);
+  setTimeout(settle,dur+120);   /* rAF is throttled in background tabs — guarantee the credit */
+  toast(`Payout claimed · +${fmt(credited)} gold`,'gold');
+  renderDock();
+}
+
+function confetti(){
+  const layer=$('#confetti');
+  const cols=['#FFC24B','#2EFFC7','#5B6CFF','#FF3B69','#E0E1F2','#00F0FF'];
+  for(let i=0;i<130;i++){
+    const c=document.createElement('div');
+    c.className='cfti';
+    c.style.left=Math.random()*100+'%';
+    c.style.background=cols[Math.floor(Math.random()*cols.length)];
+    c.style.animationDuration=(2.1+Math.random()*1.9)+'s';
+    c.style.animationDelay=(Math.random()*.7)+'s';
+    if(Math.random()<.35){c.style.borderRadius='50%';c.style.height='8px'}
+    layer.appendChild(c);setTimeout(()=>c.remove(),5000);
+  }
+}
+
+/* ============================================================
+   GLOBAL
+   ============================================================ */
+document.addEventListener('pointerdown',function unlock(){
+  try{fx.tap()}catch(e){/* audio gesture not ready */}
+  document.removeEventListener('pointerdown',unlock);
+},{once:true});
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight')go(state.step+1);
+  if(e.key==='ArrowLeft')go(state.step-1);
+  if(e.key==='Escape'){if(inTheatre)exitTheatre();else if(openS)closeSheet()}
+  if(e.key==='f'&&state.step===4)inTheatre?exitTheatre():enterTheatre();
+  if(/^[0-6]$/.test(e.key))go(+e.key);
+});
+
+/* App-shell tabs: this prototype lives inside the Hub tab, so selecting another
+   tab only moves the indicator — there is no other surface to route to here. */
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{
+  $$('.tab').forEach(o=>o.classList.remove('on'));
+  t.classList.add('on');
+  fx.tap();
+}));
+
+$('#enterTournament').addEventListener('click',()=>go(1));
+
+/* ---- web sidebar (pendu-web parity) ---- */
+$('#sbCollapse').addEventListener('click',()=>{$('#sidebar').classList.toggle('mini');fx.tap()});
+$$('.sb-item').forEach(it=>it.addEventListener('click',()=>{
+  $$('.sb-item').forEach(o=>o.classList.remove('on'));
+  it.classList.add('on');
+  /* keep phone nav in sync so both shells agree */
+  const i=it.dataset.sb;
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===i));
+  fx.tap();
+}));
+
+setGold(state.gold,{silent:true});
+renderDock();
+/* Hub (step 0) has no sticky CTA — apply AFTER renderDock so nothing resets it. */
+$('#dock').style.display = state.step===0 ? 'none' : '';
+</script>
+</body>
+</html>
