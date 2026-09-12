@@ -1265,6 +1265,8 @@ input{font-family:inherit}
       <button class="phase" data-step="4"><span class="phase-i">4</span><span class="phase-n">Stream</span></button>
       <button class="phase" data-step="5"><span class="phase-i">5</span><span class="phase-n">Bracket</span></button>
       <button class="phase" data-step="6"><span class="phase-i">6</span><span class="phase-n">Payout</span></button>
+      <button class="phase" data-step="7"><span class="phase-i">7</span><span class="phase-n">Play Again</span></button>
+      <button class="phase" data-step="8"><span class="phase-i">8</span><span class="phase-n">Profile</span></button>
     </div>
     <div class="rail"><div class="rail-f" id="railF"></div></div>
   </div>
@@ -1755,6 +1757,112 @@ input{font-family:inherit}
         <div class="split" id="splitGrid"></div>
       </div>
     </section>
+    <!-- ─────── STEP 7 · PLAY AGAIN (post-session) ─────── -->
+    <section class="screen scroll" id="s7">
+      <div class="subhead">
+        <button class="back" onclick="go(6)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Session Ended</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>Voice room · 45 mins</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center">
+        <div style="font-size:20px;font-weight:700;letter-spacing:-.01em">Voice Room Ended · 45 Mins</div>
+        <div class="small sec mt8">Save squad mates to invite them back later.</div>
+      </div>
+
+      <div class="sect"><h3>Played with you</h3><span class="right" id="pa-count">2 to review</span></div>
+      <div id="playAgainList"></div>
+
+      <div class="note mt12">
+        <span class="material-symbols-outlined ms-fill">lock</span>
+        <p><b>Private.</b> You only connect if <b>both</b> players choose Save. Nothing is shared if either of you skips.</p>
+      </div>
+    </section>
+
+    <!-- ─────── STEP 8 · GAMER PROFILE ─────── -->
+    <section class="screen scroll" id="s8">
+      <div class="subhead">
+        <button class="back" onclick="go(7)"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="min-width:0">
+          <h1>Gamer Profile</h1>
+          <div class="phase-tag"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span><span>In Pendu voice party</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center">
+        <div style="position:relative;width:96px;height:96px;margin:0 auto">
+          <img alt="You" src="assets/avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--state-live);box-shadow:0 0 26px -6px rgba(46,255,199,.7)">
+          <span class="dot" style="position:absolute;right:6px;bottom:6px;width:14px;height:14px;background:var(--state-live);border:2px solid var(--surface-container)"></span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px">
+          <span style="font-size:22px;font-weight:700;letter-spacing:-.01em">DeadlyKing</span>
+          <span class="material-symbols-outlined ms-fill" style="color:var(--state-live);font-size:19px">verified</span>
+        </div>
+        <span class="chip chip-live mt8"><span class="wave"><i></i><i></i><i></i></span>In Pendu Voice Party</span>
+        <div class="small sec mt8">Competitive Battle Royale · Squad IGL</div>
+        <div style="display:flex;gap:9px;margin-top:14px">
+          <button class="btn btn-ghost" onclick="fx.tap();toast('Joining party audio…','ok')"><span class="wave" style="color:var(--state-live)"><i></i><i></i><i></i></span>Party Audio</button>
+          <button class="btn btn-primary" onclick="fx.click();toast('Invite sent','ok')"><span class="material-symbols-outlined ms-fill">person_add</span>Send Invite</button>
+        </div>
+      </div>
+
+      <!-- Tactical summary: three REAL, separately-computable metrics -->
+      <div class="card">
+        <div class="card-t">
+          <span class="material-symbols-outlined ms-fill">query_stats</span>
+          <h2 style="font-size:16px">Tactical Summary</h2>
+        </div>
+        <div class="stats3">
+          <div class="st"><div class="v mint" id="m-complete">80%</div><div class="k">Profile Complete</div></div>
+          <div class="st"><div class="v" id="m-reliable">94%</div><div class="k">Reliability</div></div>
+          <div class="st"><div class="v gold" id="m-continuity">67%</div><div class="k">Squad Continuity</div></div>
+        </div>
+        <div class="note mt12" style="background:var(--surface-low)">
+          <span class="material-symbols-outlined ms-fill" style="color:var(--accent-primary)">info</span>
+          <p id="metricExplain"><b>Reliability</b> = sessions you joined and stayed for. <b>Continuity</b> = share of recent sessions played with saved teammates rather than randoms.</p>
+        </div>
+      </div>
+
+      <div class="sect"><h3>Gaming Identity</h3><span class="right" id="profileGap">1 field left</span></div>
+      <div class="card">
+        <div class="tri" style="grid-template-columns:1fr 1fr">
+          <div class="tri-c" style="text-align:left"><div class="tri-k">Primary Title</div><div class="tri-v">Free Fire</div><div class="small gold" style="font-size:10px;margin-top:3px">Grandmaster Tier</div></div>
+          <div class="tri-c" style="text-align:left"><div class="tri-k">Combat Role</div><div class="tri-v">Entry Fragger</div><div class="small muted" style="font-size:10px;margin-top:3px">Rush / First Pick</div></div>
+          <div class="tri-c" style="text-align:left"><div class="tri-k">Active Hours</div><div class="tri-v mono">20:00–00:00</div><div class="small mint" style="font-size:10px;margin-top:3px">From your presence</div></div>
+          <div class="tri-c" style="text-align:left"><div class="tri-k">Voice Comms</div><div class="tri-v">Pendu Built-in</div><div class="small muted" style="font-size:10px;margin-top:3px">HD low-latency</div></div>
+        </div>
+        <button class="rulebook mt12" id="addRankBtn">Add your rank band to reach 100% <span class="material-symbols-outlined">arrow_forward</span></button>
+      </div>
+
+      <!-- Quest: the negatively-correlated-with-toxicity mechanic -->
+      <div class="sect"><h3>Active Squad Quest</h3><span class="right chip chip-gold" id="questState">In Progress</span></div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span class="material-symbols-outlined ms-fill" style="color:var(--state-value);font-size:22px">bolt</span>
+          <div style="min-width:0;flex:1">
+            <div style="font-size:16px;font-weight:700;letter-spacing:-.01em">Play 3 Sessions with the Same Squad</div>
+            <div class="small sec mt8">Build synergy and unlock a squad chemistry bonus.</div>
+          </div>
+          <span class="chip chip-gold" style="flex:0 0 auto"><span class="material-symbols-outlined ms-fill">monetization_on</span>500</span>
+        </div>
+        <div style="display:flex;margin:12px 0 8px">
+          <span class="mono sec" style="font-size:11px">SYNERGY PROGRESS</span>
+          <span class="mono mint right" style="margin-left:auto;font-size:11px"><span id="questN">2</span> / 3 Completed</span>
+        </div>
+        <div class="track"><div class="track-f" id="questBar" style="width:66%"></div></div>
+        <div class="mt12">
+          <div class="small muted mono" style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Logged in current quest chain</div>
+          <div id="questChain"></div>
+        </div>
+        <button class="btn btn-live mt12" id="questPlay"><span class="material-symbols-outlined ms-fill">headset_mic</span>Start Session 3</button>
+      </div>
+
+      <div class="sect"><h3>Saved Teammates</h3><span class="right" id="savedCount">2 synergy partners</span></div>
+      <div id="savedList"></div>
+    </section>
+
   </main>
 
   <!-- ══════════ DOCK ══════════ -->
@@ -2019,11 +2127,17 @@ const DOCK={
      note:'Anti-cheat AI verifies the screenshot before prize pool escrow release.'},
   6:{k:'Total Payout',v:'<span id="dockPayout">₦170,000</span>',chip:'<span class="material-symbols-outlined">lock</span>Escrow Ready',cls:'chip chip-gold dock-r',
      cta:'<span class="material-symbols-outlined ms-fill">monetization_on</span>Claim Payout to Wallet',btn:'btn btn-gold',
-     note:'⚡ Instant transfer to primary vault with 0% network fees.'}
+     note:'⚡ Instant transfer to primary vault with 0% network fees.'},
+  7:{k:'Squad Mates',v:'<span id="dockPA">2</span> <span class="mono muted" style="font-size:12px">to review</span>',chip:'<span class="material-symbols-outlined">lock</span>Mutual only',cls:'chip dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">group_add</span>Save All &amp; Continue',btn:'btn btn-live',
+     note:'You only connect with players who also chose Save.'},
+  8:{k:'Squad Continuity',v:'<span id="dockCont">67%</span>',chip:'<span class="material-symbols-outlined">bolt</span>Quest 2/3',cls:'chip chip-gold dock-r',
+     cta:'<span class="material-symbols-outlined ms-fill">headset_mic</span>Start Next Session',btn:'btn btn-primary',
+     note:'Playing with saved teammates raises continuity and completes your quest.'}
 };
 
 function go(n,{sound=true}={}){
-  if(n<0||n>6||n===state.step)return;
+  if(n<0||n>8||n===state.step)return;
   $('#s'+state.step).classList.remove('active');
   state.step=n;
   const cur=$('#s'+n);
@@ -2033,13 +2147,16 @@ function go(n,{sound=true}={}){
     p.classList.toggle('active',i===n);
     p.classList.toggle('done',i<n);
   });
-  $('#railF').style.width=((n+1)/7*100)+'%';
+  $('#railF').style.width=((n+1)/9*100)+'%';
   /* The CTA is position:sticky, so it must sit inside the scrolling screen it
      belongs to — not as a fixed sibling overlaying every page. */
   if(n===0){$('#dock').style.display='none'}else{$('#dock').style.display='';cur.appendChild($('#dock'))}
   if(n===6)renderSplit();   /* gift share accrues after load — recompute on entry */
+  /* renderDock() rebuilds dock markup, so live counters must be re-applied after. */
+  if(n===7&&typeof updatePA==='function')setTimeout(updatePA,0);
+  if(n===8&&typeof renderProfileMetrics==='function')setTimeout(renderProfileMetrics,0);
   const ap=$('.phase.active');if(ap)ap.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-  $('#prevB').disabled=n===0;$('#nextB').disabled=n===6;
+  $('#prevB').disabled=n===0;$('#nextB').disabled=n===8;
   renderDock();
   n===4?startStream():pauseStream();
   if(sound)fx.click();
@@ -2083,6 +2200,17 @@ $('#cta').addEventListener('click',()=>{
   if(s===4)return showSheet('#sheetGift');
   if(s===5)return state.submitted?go(6):openSubmit();
   if(s===6)return claim();
+  if(s===7){
+    var left=MATES.filter(function(m){return !m.saved}).length;
+    if(left===0)return go(8);
+    MATES.forEach(function(m){if(!m.saved)m.saved='saved'});
+    fx.success(); toast('Saved all \u2014 mutual matches only','ok');
+    renderPlayAgain(); updatePA(); return;
+  }
+  if(s===8){
+    if(questProgress<3){document.getElementById('questPlay').click();return}
+    fx.click(); toast('Starting a session with your squad\u2026','ok'); return;
+  }
 });
 
 /* ============================================================
@@ -2543,7 +2671,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft')go(state.step-1);
   if(e.key==='Escape'){if(inTheatre)exitTheatre();else if(openS)closeSheet()}
   if(e.key==='f'&&state.step===4)inTheatre?exitTheatre():enterTheatre();
-  if(/^[0-6]$/.test(e.key))go(+e.key);
+  if(/^[0-8]$/.test(e.key))go(+e.key);
 });
 
 /* App-shell tabs: this prototype lives inside the Hub tab, so selecting another
@@ -2566,6 +2694,154 @@ $$('.sb-item').forEach(it=>it.addEventListener('click',()=>{
   $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===i));
   fx.tap();
 }));
+
+
+/* ============================================================
+   STEP 7/8 — PLAY AGAIN LOOP + GAMER PROFILE
+   Implements Opportunities A, B and D from
+   docs/GAMING_IDENTITY_SQUAD_DISCOVERY_RESEARCH.md
+   ============================================================ */
+
+/* `together` is the compounding history signal — derivable from the party
+   history Pendu already stores. Not an invented score. */
+const MATES=[
+  {n:'Ghost_Shooter',av:'assets/player1.png',together:3,tags:['Mic On','Competitive','Fast Paced'],online:true,saved:null},
+  {n:'Shadow_Apex',  av:'assets/player2.png',together:1,tags:['Mic On','Casual'],online:false,saved:null}
+];
+const SAVED=[
+  {n:'Ghost_Shooter',av:'assets/player1.png',wins:12,role:'Assault / Sniper',online:true},
+  {n:'Shadow_Apex',  av:'assets/player2.png',wins:9, role:'Scout / Vanguard',online:true}
+];
+
+let questProgress=2;
+let hasRankBand=false;
+
+function renderPlayAgain(){
+  const el=$('#playAgainList');
+  if(!el)return;
+  el.innerHTML=MATES.map(function(m,i){
+    var actions = m.saved
+      ? '<span class="chip '+(m.saved==='saved'?'chip-live':'')+'" style="height:34px">'
+        +'<span class="material-symbols-outlined ms-fill">'+(m.saved==='saved'?'check_circle':'do_not_disturb_on')+'</span>'
+        +(m.saved==='saved'?'Saved &mdash; waiting on them':'Skipped')+'</span>'
+      : '<button class="btn btn-ghost btn-sm" style="flex:1;height:38px" data-skip="'+i+'">Skip</button>'
+        +'<button class="btn btn-live btn-sm" style="flex:1;height:38px" data-save="'+i+'">Save Contact</button>';
+    return '<div class="team '+(m.saved==='saved'?'you':'')+'" style="align-items:flex-start">'
+      +'<div class="team-crest" style="border-radius:50%"><img alt="'+m.n+'" src="'+m.av+'"></div>'
+      +'<div style="min-width:0;flex:1">'
+      +'<div class="team-n">'+m.n+(m.online?' <span class="dot" style="background:var(--state-live)"></span>':'')+'</div>'
+      +'<div class="team-r"><span class="material-symbols-outlined ms-fill" style="color:var(--accent-primary)">history</span>'
+      +m.together+' voice room'+(m.together===1?'':'s')+' played together</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+      +m.tags.map(function(t){return '<span class="chip">'+t+'</span>'}).join('')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:10px">'+actions+'</div>'
+      +'</div></div>';
+  }).join('');
+
+  $$('[data-save]').forEach(function(b){b.addEventListener('click',function(){
+    var i=+b.dataset.save; MATES[i].saved='saved'; fx.success();
+    toast('Saved '+MATES[i].n+' &mdash; connects only if they save you too','ok');
+    renderPlayAgain(); updatePA();
+  })});
+  $$('[data-skip]').forEach(function(b){b.addEventListener('click',function(){
+    var i=+b.dataset.skip; MATES[i].saved='skipped'; fx.tap();
+    renderPlayAgain(); updatePA();
+  })});
+}
+
+function updatePA(){
+  var left=MATES.filter(function(m){return !m.saved}).length;
+  var c=$('#pa-count'); if(c)c.textContent = left ? left+' to review' : 'All reviewed';
+  var d=$('#dockPA'); if(d)d.textContent=left;
+  if(state.step===7 && left===0){
+    var cta=$('#cta');
+    cta.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Reviewed &mdash; View Profile';
+    cta.className='btn btn-live';
+  }
+}
+
+function renderSaved(){
+  var el=$('#savedList'); if(!el)return;
+  el.innerHTML=SAVED.map(function(m){
+    return '<div class="tmini">'
+      +'<img alt="'+m.n+'" src="'+m.av+'" style="border-radius:50%">'
+      +'<div style="min-width:0"><div class="tmini-n">'+m.n+'</div>'
+      +'<div class="tmini-m"><span class="mint">'+m.wins+' wins together</span> &middot; '+m.role+'</div></div>'
+      +'<button class="chip '+(m.online?'chip-live':'')+'" style="margin-left:auto;height:32px" data-ring="'+m.n+'">'
+      +'<span class="material-symbols-outlined ms-fill">headset_mic</span>'+(m.online?'Voice':'Offline')+'</button>'
+      +'</div>';
+  }).join('');
+  var c=$('#savedCount'); if(c)c.textContent=SAVED.length+' synergy partners';
+}
+
+function renderQuestChain(){
+  var el=$('#questChain'); if(!el)return;
+  el.innerHTML=SAVED.map(function(m){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0">'
+      +'<span class="dot" style="background:var(--state-live)"></span>'
+      +'<span class="mono" style="font-size:12px">'+m.n+'</span>'
+      +'<span class="mono muted" style="margin-left:auto;font-size:11px">('+questProgress+'/3)</span></div>';
+  }).join('');
+}
+
+function renderProfileMetrics(){
+  /* Profile completeness = filled fields / total. Computable day one. */
+  var fields=[true,true,true,true,hasRankBand];
+  var pct=Math.round(fields.filter(Boolean).length/fields.length*100);
+  var mc=$('#m-complete'); if(mc)mc.textContent=pct+'%';
+  var gap=$('#profileGap'); if(gap)gap.textContent = hasRankBand ? 'Complete' : '1 field left';
+  var btn=$('#addRankBtn');
+  if(btn && hasRankBand){
+    btn.innerHTML='<span class="material-symbols-outlined ms-fill" style="color:var(--state-live)">check_circle</span>Profile complete';
+    btn.style.color='var(--state-live)';
+  }
+  /* Squad continuity = share of recent sessions with saved teammates. */
+  var cont=Math.min(100,Math.round(questProgress/3*100));
+  var mcon=$('#m-continuity'); if(mcon)mcon.textContent=cont+'%';
+  var dc=$('#dockCont'); if(dc)dc.textContent=cont+'%';
+  if(state.step===8){
+    var chip=$('#dockChip');
+    if(chip)chip.innerHTML = questProgress>=3
+      ? '<span class="material-symbols-outlined">check_circle</span>Quest complete'
+      : '<span class="material-symbols-outlined">bolt</span>Quest '+questProgress+'/3';
+  }
+
+  var qn=$('#questN'); if(qn)qn.textContent=questProgress;
+  var qb=$('#questBar'); if(qb)qb.style.width=Math.round(questProgress/3*100)+'%';
+  var qs=$('#questState');
+  if(qs && questProgress>=3){qs.textContent='Complete';qs.className='chip chip-live right'}
+  var qp=$('#questPlay');
+  if(qp && questProgress>=3){
+    qp.innerHTML='<span class="material-symbols-outlined ms-fill">check_circle</span>Quest complete &middot; +500 claimed';
+    qp.disabled=true;
+  }
+  renderQuestChain();
+}
+
+document.addEventListener('click',function(e){
+  var ring=e.target.closest('[data-ring]');
+  if(ring){fx.tap();toast('Ringing '+ring.dataset.ring+'\u2026','ok');return}
+
+  var rb=e.target.closest('#addRankBtn');
+  if(rb && !hasRankBand){
+    hasRankBand=true; fx.success();
+    toast('Rank band added \u00b7 profile 100%','ok');
+    renderProfileMetrics(); return;
+  }
+  var qp=e.target.closest('#questPlay');
+  if(qp && questProgress<3){
+    questProgress++;
+    if(questProgress>=3){
+      fx.victory(); setGold(state.gold+500);
+      toast('Quest complete \u00b7 +500 coins','gold'); confetti();
+    }else{
+      fx.success(); toast('Session logged \u00b7 '+questProgress+'/3','ok');
+    }
+    renderProfileMetrics();
+  }
+});
+
+renderPlayAgain(); updatePA(); renderSaved(); renderProfileMetrics();
 
 setGold(state.gold,{silent:true});
 renderDock();
